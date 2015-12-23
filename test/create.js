@@ -3,6 +3,7 @@ var hyperlog = require('hyperlog')
 var fdstore = require('fd-chunk-store')
 var path = require('path')
 var memdb = require('memdb')
+var collect = require('collect-stream')
 
 var tmpdir = require('os').tmpdir()
 var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
@@ -10,7 +11,7 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('create 3 nodes and a way', function (t) {
-  t.plan(6)
+  t.plan(8)
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -44,14 +45,19 @@ test('create 3 nodes and a way', function (t) {
 
   function ready () {
     var q0 = [[63,65],[-148,-146]]
+    var ex0 = [
+      { type: 'node', loc: [ 64.5, -147.3 ], id: names.A },
+      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
+      { type: 'node', loc: [ 64.2, -146.5 ], id: names.C },
+      { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
+    ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
-      t.deepEqual(res.sort(idcmp), [
-        { type: 'node', loc: [ 64.5, -147.3 ], id: names.A },
-        { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
-        { type: 'node', loc: [ 64.2, -146.5 ], id: names.C },
-        { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
-      ].sort(idcmp))
+      t.deepEqual(res.sort(idcmp), ex0)
+    })
+    collect(osm.queryStream(q0), function (err, res) {
+      t.ifError(err)
+      t.deepEqual(res.sort(idcmp), ex0)
     })
   }
 })

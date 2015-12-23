@@ -6,7 +6,7 @@ var sub = require('subleveldown')
 var randomBytes = require('randombytes')
 var has = require('has')
 var once = require('once')
-var through2 = require('through2')
+var through = require('through2')
 var readonly = require('read-only-stream')
 var xtend = require('xtend')
 
@@ -160,13 +160,14 @@ DB.prototype.queryStream = function (q, opts) {
     r.pipe(stream)
   })
   var stream = through.obj(write)
+  var seen = {}
   return readonly(stream)
 
   function write (row, enc, next) {
     next = once(next)
     var tr = this
     tr.push(row)
-    self._onpt(row.value, function (err, res) {
+    self._onpt(row, seen, function (err, res) {
       if (res) res.forEach(function (r) { tr.push(r) })
     })
   }
