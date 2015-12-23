@@ -49,13 +49,17 @@ function DB (opts) {
         batch.push({ type: 'put', key: ref, value: Object.keys(ln) })
         if (--pending === 0) insert()
       })
-      if (--pending === 0) insert()
     })
+    if (--pending === 0) insert()
 
     function insert () {
       self.refdb.batch(batch, next)
     }
   })
+}
+
+DB.prototype._links = function (ref, cb) {
+  this.refdb.get(ref, cb)
 }
 
 DB.prototype.create = function (value, opts, cb) {
@@ -74,9 +78,36 @@ DB.prototype.get = function (key, opts, cb) {
 }
 
 DB.prototype.query = function (q, opts, cb) {
-  this.kdb.query(q, opts, cb)
+  var self = this
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+  cb = once(cb || noop)
+  self.kdb.query(q, opts, function (err, pts) {
+    if (err) return cb(err)
+    var pending = 1
+    pts.forEach(function (pt) {
+      pending++
+      self._links(pt.value, function (err, links) {
+        links.forEach(function (link) {
+          pending++
+          self.log.get(link, function (err, doc) {
+            if (err) return cb(err)
+            pts.push(doc)
+            if (--pending === 0) cb(null, pts)
+          })
+        })
+        if (--pending === 0) cb(null, pts)
+      })
+    })
+    if (--pending === 0) cb(null, pts)
+  })
 }
 
 DB.prototype.queryStream = function (q, opts) {
   return this.kdb.queryStream(q, opts)
 }
+
+function noop () {}
