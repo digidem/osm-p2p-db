@@ -62,8 +62,13 @@ function DB (opts) {
   })
 }
 
-DB.prototype._links = function (ref, cb) {
-  this.refdb.get(ref, cb)
+DB.prototype._links = function (buf, cb) {
+  var self = this
+  var link = buf.toString('hex')
+  self.log.get(link, function (err, doc) {
+    if (err) cb(null, [])
+    else self.refdb.get(doc.value.k, cb)
+  })
 }
 
 DB.prototype.ready = function (cb) {
@@ -108,23 +113,26 @@ DB.prototype.query = function (q, opts, cb) {
   })
   function onquery (err, pts) {
     if (err) return cb(err)
-    var pending = 1
+    var pending = 1, res = []
     pts.forEach(function (pt) {
-      pending++
+      pending += 2
+      self.log.get(pt.value.toString('hex'), function (err, doc) {
+        if (doc && doc.value && doc.value.v) res.push(doc.value.v)
+        if (--pending === 0) cb(null, res)
+      })
       self._links(pt.value, function (err, links) {
         if (!links) links = []
         links.forEach(function (link) {
           pending++
           self.log.get(link, function (err, doc) {
-            if (err) return cb(err)
-            pts.push(doc)
-            if (--pending === 0) cb(null, pts)
+            if (doc && doc.value && doc.value.v) res.push(doc.value.v)
+            if (--pending === 0) cb(null, res)
           })
         })
-        if (--pending === 0) cb(null, pts)
+        if (--pending === 0) cb(null, res)
       })
     })
-    if (--pending === 0) cb(null, pts)
+    if (--pending === 0) cb(null, res)
   }
 }
 
