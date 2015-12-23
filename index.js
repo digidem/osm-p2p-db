@@ -28,8 +28,8 @@ function DB (opts) {
     kdbtree: kdbtree,
     types: [ 'float', 'float' ],
     map: function (row) {
-      if (row.value && Array.isArray(row.value.loc)) {
-        return row.value.loc
+      if (row.value && row.value.v && Array.isArray(row.value.v.loc)) {
+        return row.value.v.loc
       }
     }
   })
@@ -112,6 +112,7 @@ DB.prototype.query = function (q, opts, cb) {
     pts.forEach(function (pt) {
       pending++
       self._links(pt.value, function (err, links) {
+        if (!links) links = []
         links.forEach(function (link) {
           pending++
           self.log.get(link, function (err, doc) {
