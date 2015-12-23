@@ -11,7 +11,7 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('create 3 nodes and a way', function (t) {
-  t.plan(8)
+  t.plan(12)
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -53,11 +53,24 @@ test('create 3 nodes and a way', function (t) {
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
-      t.deepEqual(res.sort(idcmp), ex0)
+      t.deepEqual(res.sort(idcmp), ex0, 'full coverage query')
     })
     collect(osm.queryStream(q0), function (err, res) {
       t.ifError(err)
-      t.deepEqual(res.sort(idcmp), ex0)
+      t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
+    })
+    var q1 = [[62,64],[-149.5,-147.5]]
+    var ex1 = [
+      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
+      { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
+    ].sort(idcmp)
+    osm.query(q1, function (err, res) {
+      t.ifError(err)
+      t.deepEqual(res.sort(idcmp), ex1, 'partial coverage query')
+    })
+    collect(osm.queryStream(q1), function (err, res) {
+      t.ifError(err)
+      t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')
     })
   }
 })
