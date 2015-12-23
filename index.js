@@ -44,10 +44,12 @@ function DB (opts) {
     refs.forEach(function (ref) {
       pending++
       self.refdb.get(ref, function (err, links) {
-        if (err) return next(err)
+        //if (err) return next(err)
+        if (!links) links = []
         var ln = {}
         links.forEach(function (link) { ln[link] = true })
         row.links.forEach(function (link) { delete ln[link] })
+        ln[row.key] = true
         batch.push({ type: 'put', key: ref, value: Object.keys(ln) })
         if (--pending === 0) insert()
       })
@@ -64,10 +66,24 @@ DB.prototype._links = function (ref, cb) {
   this.refdb.get(ref, cb)
 }
 
+DB.prototype.ready = function (cb) {
+  var self = this
+  var pending = 2
+  self.refdex.ready(ready)
+  self.kdb.ready(ready)
+  function ready () { if (--pending === 0) cb() }
+}
+
 DB.prototype.create = function (value, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+  if (!cb) cb = noop
   var key = randomBytes(8).toString('hex')
-  return this.put(key, value, opts, function (err) {
-    cb(err, key)
+  return this.put(key, value, opts, function (err, node) {
+    cb(err, key, node)
   })
 }
 
@@ -87,7 +103,10 @@ DB.prototype.query = function (q, opts, cb) {
   }
   if (!opts) opts = {}
   cb = once(cb || noop)
-  self.kdb.query(q, opts, function (err, pts) {
+  self.ready(function () {
+    self.kdb.query(q, opts, onquery)
+  })
+  function onquery (err, pts) {
     if (err) return cb(err)
     var pending = 1
     pts.forEach(function (pt) {
@@ -105,13 +124,18 @@ DB.prototype.query = function (q, opts, cb) {
       })
     })
     if (--pending === 0) cb(null, pts)
-  })
+  }
 }
 
 DB.prototype.queryStream = function (q, opts) {
   var self = this
-  var r = self.kdb.queryStream(q, opts)
-  return readonly(r.pipe(through.obj(write)))
+  self.ready(function () {
+    var r = self.kdb.queryStream(q, opts)
+    r.on('error', stream.emit.bind(stream, 'error'))
+    r.pipe(stream)
+  })
+  var stream = through.obj(write)
+  return readonly(stream)
 
   function write (row, enc, next) {
     next = once(next)
