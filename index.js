@@ -8,6 +8,7 @@ var has = require('has')
 var once = require('once')
 var through2 = require('through2')
 var readonly = require('read-only-stream')
+var xtend = require('xtend')
 
 module.exports = DB
 
@@ -117,7 +118,9 @@ DB.prototype.query = function (q, opts, cb) {
     pts.forEach(function (pt) {
       pending += 2
       self.log.get(pt.value.toString('hex'), function (err, doc) {
-        if (doc && doc.value && doc.value.v) res.push(doc.value.v)
+        if (doc && doc.value && doc.value.k && doc.value.v) {
+          res.push(xtend(doc.value.v, { id: doc.value.k }))
+        }
         if (--pending === 0) cb(null, res)
       })
       self._links(pt.value, function (err, links) {
@@ -125,7 +128,9 @@ DB.prototype.query = function (q, opts, cb) {
         links.forEach(function (link) {
           pending++
           self.log.get(link, function (err, doc) {
-            if (doc && doc.value && doc.value.v) res.push(doc.value.v)
+            if (doc && doc.value && doc.value.k && doc.value.v) {
+              res.push(xtend(doc.value.v, { id: doc.value.k }))
+            }
             if (--pending === 0) cb(null, res)
           })
         })
