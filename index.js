@@ -166,9 +166,9 @@ DB.prototype.queryStream = function (q, opts) {
   function write (row, enc, next) {
     next = once(next)
     var tr = this
-    tr.push(row)
     self._onpt(row, seen, function (err, res) {
       if (res) res.forEach(function (r) { tr.push(r) })
+      next()
     })
   }
 }
