@@ -1,0 +1,39 @@
+{
+  "name": "osm-p2p-db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "keywords": [
+    "open street map",
+    "osm",
+    "p2p",
+    "map",
+    "geo",
+    "database"
+  ],
+  "author": "substack",
+  "license": "BSD",
+  "devDependencies": {
+    "collect-stream": "^1.1.1",
+    "fd-chunk-store": "^1.1.0",
+    "hyperlog": "^4.7.0",
+    "memdb": "^1.3.1",
+    "tape": "^4.3.0"
+  },
+  "dependencies": {
+    "has": "^1.0.1",
+    "hyperkv": "^1.2.0",
+    "hyperlog-index": "^4.0.0",
+    "hyperlog-kdb-index": "^1.0.1",
+    "kdb-tree-store": "^3.0.2",
+    "once": "^1.3.3",
+    "randombytes": "^2.0.1",
+    "read-only-stream": "^2.0.0",
+    "subleveldown": "^2.1.0",
+    "through2": "^2.0.0",
+    "xtend": "^4.0.1"
+  }
+}
