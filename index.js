@@ -128,7 +128,7 @@ DB.prototype.query = function (q, opts, cb) {
 DB.prototype._onpt = function (pt, seen, cb) {
   var self = this
   var link = pt.value.toString('hex')
-  var res = [], pending = 1
+  var res = [], pending = 2
   self.log.get(link, function (err, doc) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
       res.push(xtend(doc.value.v, { id: doc.value.k }))
