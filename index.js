@@ -114,7 +114,7 @@ DB.prototype.query = function (q, opts, cb) {
   })
   function onquery (err, pts) {
     if (err) return cb(err)
-    var pending = 1, res = []
+    var pending = 1, res = [], seen = {}
     pts.forEach(function (pt) {
       pending += 2
       self.log.get(pt.value.toString('hex'), function (err, doc) {
@@ -126,6 +126,8 @@ DB.prototype.query = function (q, opts, cb) {
       self._links(pt.value, function (err, links) {
         if (!links) links = []
         links.forEach(function (link) {
+          if (has(seen, link)) return
+          seen[link] = true
           pending++
           self.log.get(link, function (err, doc) {
             if (doc && doc.value && doc.value.k && doc.value.v) {
