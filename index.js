@@ -63,9 +63,8 @@ function DB (opts) {
   })
 }
 
-DB.prototype._links = function (buf, cb) {
+DB.prototype._links = function (link, cb) {
   var self = this
-  var link = buf.toString('hex')
   self.log.get(link, function (err, doc) {
     if (err) cb(null, [])
     else self.refdb.get(doc.value.k, cb)
@@ -116,31 +115,41 @@ DB.prototype.query = function (q, opts, cb) {
     if (err) return cb(err)
     var pending = 1, res = [], seen = {}
     pts.forEach(function (pt) {
-      pending += 2
-      self.log.get(pt.value.toString('hex'), function (err, doc) {
-        if (doc && doc.value && doc.value.k && doc.value.v) {
-          res.push(xtend(doc.value.v, { id: doc.value.k }))
-        }
-        if (--pending === 0) cb(null, res)
-      })
-      self._links(pt.value, function (err, links) {
-        if (!links) links = []
-        links.forEach(function (link) {
-          if (has(seen, link)) return
-          seen[link] = true
-          pending++
-          self.log.get(link, function (err, doc) {
-            if (doc && doc.value && doc.value.k && doc.value.v) {
-              res.push(xtend(doc.value.v, { id: doc.value.k }))
-            }
-            if (--pending === 0) cb(null, res)
-          })
-        })
+      pending++
+      self._onpt(pt, seen, function (err, r) {
+        if (r) res.push.apply(res, r)
         if (--pending === 0) cb(null, res)
       })
     })
     if (--pending === 0) cb(null, res)
   }
+}
+
+DB.prototype._onpt = function (pt, seen, cb) {
+  var self = this
+  var link = pt.value.toString('hex')
+  var res = [], pending = 1
+  self.log.get(link, function (err, doc) {
+    if (doc && doc.value && doc.value.k && doc.value.v) {
+      res.push(xtend(doc.value.v, { id: doc.value.k }))
+    }
+    if (--pending === 0) cb(null, res)
+  })
+  self._links(link, function (err, links) {
+    if (!links) links = []
+    links.forEach(function (link) {
+      if (has(seen, link)) return
+      seen[link] = true
+      pending++
+      self.log.get(link, function (err, doc) {
+        if (doc && doc.value && doc.value.k && doc.value.v) {
+          res.push(xtend(doc.value.v, { id: doc.value.k }))
+        }
+        if (--pending === 0) cb(null, res)
+      })
+    })
+    if (--pending === 0) cb(null, res)
+  })
 }
 
 DB.prototype.queryStream = function (q, opts) {
@@ -157,17 +166,8 @@ DB.prototype.queryStream = function (q, opts) {
     next = once(next)
     var tr = this
     tr.push(row)
-    self._links(row.value, function (err, links) {
-      var pending = 1
-      links.forEach(function (link) {
-        pending++
-        self.log.get(link, function (err, doc) {
-          if (err) return next(err)
-          tr.push({ key: link, value: doc })
-          if (--pending === 0) next()
-        })
-      })
-      if (--pending === 0) next()
+    self._onpt(row.value, function (err, res) {
+      if (res) res.forEach(function (r) { tr.push(r) })
     })
   }
 }
