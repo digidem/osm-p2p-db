@@ -6,6 +6,8 @@ var sub = require('subleveldown')
 var randomBytes = require('randombytes')
 var has = require('has')
 var once = require('once')
+var through2 = require('through2')
+var readonly = require('read-only-stream')
 
 module.exports = DB
 
@@ -107,7 +109,27 @@ DB.prototype.query = function (q, opts, cb) {
 }
 
 DB.prototype.queryStream = function (q, opts) {
-  return this.kdb.queryStream(q, opts)
+  var self = this
+  var r = self.kdb.queryStream(q, opts)
+  return readonly(r.pipe(through.obj(write)))
+
+  function write (row, enc, next) {
+    next = once(next)
+    var tr = this
+    tr.push(row)
+    self._links(row.value, function (err, links) {
+      var pending = 1
+      links.forEach(function (link) {
+        pending++
+        self.log.get(link, function (err, doc) {
+          if (err) return next(err)
+          tr.push({ key: link, value: doc })
+          if (--pending === 0) next()
+        })
+      })
+      if (--pending === 0) next()
+    })
+  }
 }
 
 function noop () {}
