@@ -4,7 +4,7 @@ p2p database for open street map data
 
 # example
 
-```
+``` js
 var hyperlog = require('hyperlog')
 
 var level = require('level')
