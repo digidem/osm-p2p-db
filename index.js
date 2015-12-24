@@ -45,7 +45,7 @@ function DB (opts) {
     refs.forEach(function (ref) {
       pending++
       self.refdb.get(ref, function (err, links) {
-        //if (err) return next(err)
+        if (err && !notFound(err)) return next(err)
         if (!links) links = []
         var ln = {}
         links.forEach(function (link) { ln[link] = true })
@@ -174,3 +174,6 @@ DB.prototype.queryStream = function (q, opts) {
 }
 
 function noop () {}
+function notFound (err) {
+  return /^notfound/i.test(err.message) || err.notFound
+}
