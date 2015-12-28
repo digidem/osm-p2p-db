@@ -146,9 +146,11 @@ Each object in the stream is a document augmented with an `id` property.
 # browser
 
 To use this module in the browser, use [level-browserify][5] to provide the
-`opts.db` instance backed by IndexedDB.
+`opts.db` instance and [idb-chunk-store][6] as the `opts.store`. Each of these
+is backed by IndexedDB, a native browser storage interface.
 
 [5]: https://npmjs.com/package/level-browserify
+[6]: https://www.npmjs.com/package/idb-chunk-store
 
 # replication
 
