@@ -42,7 +42,7 @@ test('relation of ways', function (t) {
       doc.refs = doc.refs.map(function (ref) { return names[ref] })
     }
     if (doc.members) {
-      doc.memebers = doc.members.map(function (ref) { return names[ref] })
+      doc.members = doc.members.map(function (ref) { return names[ref] })
     }
     osm.create(doc, function (err, k, node) {
       t.ifError(err)
@@ -56,8 +56,8 @@ test('relation of ways', function (t) {
     var q0 = [[62,63],[-145.5,-144.5]]
     var ex0 = [
       { type: 'node', loc: [ 62.1, -145.1 ], id: names.E },
-      { type: 'way', refs: [ names.E, names.F, names.G ] },
-      { type: 'relation', members: [ names.D, names.H ] }
+      { type: 'way', refs: [ names.E, names.F, names.G ], id: names.H },
+      { type: 'relation', members: [ names.D, names.H ], id: names.I }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)

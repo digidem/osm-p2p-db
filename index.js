@@ -135,7 +135,7 @@ DB.prototype._onpt = function (pt, seen, cb) {
     }
     if (--pending === 0) cb(null, res)
   })
-  self._links(link, function (err, links) {
+  self._links(link, function onlinks (err, links) {
     if (!links) links = []
     links.forEach(function (link) {
       if (has(seen, link)) return
@@ -145,6 +145,11 @@ DB.prototype._onpt = function (pt, seen, cb) {
         if (doc && doc.value && doc.value.k && doc.value.v) {
           res.push(xtend(doc.value.v, { id: doc.value.k }))
         }
+        if (--pending === 0) cb(null, res)
+      })
+      pending++
+      self._links(link, function (err, links) {
+        onlinks(err, links)
         if (--pending === 0) cb(null, res)
       })
     })
