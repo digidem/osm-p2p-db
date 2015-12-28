@@ -150,7 +150,6 @@ DB.prototype._onpt = function (pt, seen, cb) {
       pending++
       self._links(link, function (err, links) {
         onlinks(err, links)
-        if (--pending === 0) cb(null, res)
       })
     })
     if (--pending === 0) cb(null, res)
