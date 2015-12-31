@@ -47,21 +47,25 @@ Now we can create a few nodes and search with a bounding box query:
 ```
 $ mkdir /tmp/osm-p2p
 $ node db.js create '{"type":"node","lat":64.6,"lon":-147.8}'
-400427819db37b43
+a50aa575ae96971b
 $ node db.js create '{"type":"node","lat":64.3,"lon":-148.2}'
-76edd8b6d52da3fb
+1b83545b2b06eaad
 $ node db.js create '{"type":"node","lat":64.5,"lon":-147.3}'
-013d2331efaba7a5
+c328c306ddcce256
 $ node db.js query 64.1,64.6 -148,-147
-{ type: 'node', lat: 64.5, lon: -147.3, id: '013d2331efaba7a5' }
+{ type: 'node',
+  lat: 64.5,
+  lon: -147.3,
+  id: 'c328c306ddcce256',
+  version: 'e635d07b9fc0a9d048cdd5d9e97a44a19ba3a0b2a51830d1e3e0fadcb80935fc' }
 ```
 
 We can make a `way` document that refers to a list of `node` documents:
 
 ```
 $ node db.js create '{"type":"way","refs":
-["400427819db37b43","76edd8b6d52da3fb","013d2331efaba7a5"]}'
-611336e6def6bd93
+["a50aa575ae96971b","1b83545b2b06eaad","c328c306ddcce256"]}'
+cb8b6842a9114b76
 ```
 
 When we query, any `ways` that have one or more nodes within the bounding box
@@ -69,10 +73,15 @@ will turn up in the results:
 
 ```
 $ node db.js query 64.1,64.6 -148,-147
-{ type: 'node', lat: 64.5, lon: -147.3, id: '013d2331efaba7a5' }
+{ type: 'node',
+  lat: 64.5,
+  lon: -147.3,
+  id: 'c328c306ddcce256',
+  version: 'e635d07b9fc0a9d048cdd5d9e97a44a19ba3a0b2a51830d1e3e0fadcb80935fc' }
 { type: 'way',
-  refs: [ '400427819db37b43', '76edd8b6d52da3fb', '013d2331efaba7a5' ],
-  id: '611336e6def6bd93' }
+  refs: [ 'a50aa575ae96971b', '1b83545b2b06eaad', 'c328c306ddcce256' ],
+  id: 'cb8b6842a9114b76',
+  version: 'f4fc0045e298ca4f9373fab78dee4f0561b4056dcd7975eb92f21d0a05e0eede' }
 ```
 
 # api
@@ -133,7 +142,8 @@ Queries are arrays of `[[minLat,maxLat],[minLon,maxLon]]` specifying a bounding
 box.
 
 `cb(err, res)` fires with an array of results `res`. Each result is the
-document augmented with an `id` property.
+document augmented with an `id` property and a `version` property that is the
+hash key from the underlying hyperlog.
 
 ## var rstream = osm.queryStream(q, opts)
 
@@ -141,7 +151,8 @@ Return a readable object stream `rstream` of query results contained in the
 query `q`. Queries are arrays of `[[minLat,maxLat],[minLon,maxLon]]` specifying
 a bounding box.
 
-Each object in the stream is a document augmented with an `id` property.
+Each object in the stream is a document augmented with an `id` property and a
+`version` property that is the hash key from the underlying hyperlog.
 
 # browser
 
