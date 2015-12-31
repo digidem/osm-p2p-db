@@ -39,6 +39,7 @@ test('relations of relations', function (t) {
   })
   var names = {}
   var nodes = {}
+  var versions = {}
 
   ;(function next () {
     if (keys.length === 0) return ready()
@@ -53,6 +54,7 @@ test('relations of relations', function (t) {
     osm.create(doc, function (err, k, node) {
       t.ifError(err)
       names[key] = k
+      versions[key] = node.key
       nodes[k] = node
       next()
     })
@@ -61,10 +63,14 @@ test('relations of relations', function (t) {
   function ready () {
     var q0 = [[62,63],[-145.5,-144.5]]
     var ex0 = [
-      { type: 'node', lat: 62.1, lon: -145.1, id: names.E },
-      { type: 'way', refs: [ names.E, names.F, names.G ], id: names.H },
-      { type: 'relation', members: [ names.D, names.H ], id: names.I },
-      { type: 'relation', members: [ names.I, names.N ], id: names.O }
+      { type: 'node', lat: 62.1, lon: -145.1,
+        id: names.E, version: versions.E },
+      { type: 'way', refs: [ names.E, names.F, names.G ],
+        id: names.H, version: versions.H },
+      { type: 'relation', members: [ names.D, names.H ],
+        id: names.I, version: versions.I },
+      { type: 'relation', members: [ names.I, names.N ],
+        id: names.O, version: versions.O }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)

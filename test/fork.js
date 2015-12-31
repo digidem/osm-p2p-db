@@ -33,6 +33,7 @@ test('fork', function (t) {
   }
   var names = {}
   var nodes = {}
+  var versions = {}
 
   var keys = Object.keys(docs).sort()
   ;(function next () {
@@ -45,6 +46,8 @@ test('fork', function (t) {
     osm0.create(doc, function (err, k, node) {
       t.ifError(err)
       names[key] = k
+      if (!versions[key]) versions[key] = []
+      versions[key].push(node.key)
       nodes[k] = node
       next()
     })
@@ -57,10 +60,13 @@ test('fork', function (t) {
     r0.once('end', function () {
       var newdoc0 = { type: 'node', lat: 62.5, lon: -146.2 }
       var newdoc1 = { type: 'node', lat: 62.4, lon: -146.3 }
-      osm0.put(names.C, newdoc0, function (err) {
+      osm0.put(names.C, newdoc0, function (err, node) {
         t.ifError(err)
-        osm1.put(names.C, newdoc1, function (err) {
+        versions.C.push(node.key)
+
+        osm1.put(names.C, newdoc1, function (err, node) {
           t.ifError(err)
+          versions.C.push(node.key)
           replicate()
         })
       })
@@ -79,9 +85,12 @@ test('fork', function (t) {
   function check () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3, id: names.A },
-      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
-      { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
+      { type: 'node', lat: 64.5, lon: -147.3,
+        id: names.A, version: versions.A[0] },
+      { type: 'node', lat: 63.9, lon: -147.6,
+        id: names.B, version: versions.B[0] },
+      { type: 'way', refs: [ names.A, names.B, names.C ],
+        id: names.D, version: versions.D[0] }
     ].sort(idcmp)
     osm0.query(q0, function (err, res) {
       t.ifError(err)
@@ -93,10 +102,14 @@ test('fork', function (t) {
     })
     var q1 = [[62,64],[-149.5,-146]]
     var ex1 = [
-      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
-      { type: 'node', lat: 62.5, lon: -146.2, id: names.C },
-      { type: 'node', lat: 62.4, lon: -146.3, id: names.C },
-      { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
+      { type: 'node', lat: 63.9, lon: -147.6,
+        id: names.B, version: versions.B[0] },
+      { type: 'node', lat: 62.5, lon: -146.2,
+        id: names.C, version: versions.C[1] },
+      { type: 'node', lat: 62.4, lon: -146.3,
+        id: names.C, version: versions.C[2] },
+      { type: 'way', refs: [ names.A, names.B, names.C ],
+        id: names.D, version: versions.D[0] }
     ].sort(idcmp)
     osm0.query(q1, function (err, res) {
       t.ifError(err)
