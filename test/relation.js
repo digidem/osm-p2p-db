@@ -12,13 +12,13 @@ var osmdb = require('../')
 
 test('relation of ways', function (t) {
   var docs = {
-    A: { type: 'node', loc: [ 64.5, -147.3 ] },
-    B: { type: 'node', loc: [ 63.9, -147.6 ] },
-    C: { type: 'node', loc: [ 64.2, -146.5 ] },
+    A: { type: 'node', lat: 64.5, lon: -147.3 },
+    B: { type: 'node', lat: 63.9, lon: -147.6 },
+    C: { type: 'node', lat: 64.2, lon: -146.5 },
     D: { type: 'way', refs: [ 'A', 'B', 'C' ] },
-    E: { type: 'node', loc: [ 62.1, -145.1 ] },
-    F: { type: 'node', loc: [ 62.3, -146.4 ] },
-    G: { type: 'node', loc: [ 62.6, -146.0 ] },
+    E: { type: 'node', lat: 62.1, lon: -145.1 },
+    F: { type: 'node', lat: 62.3, lon: -146.4 },
+    G: { type: 'node', lat: 62.6, lon: -146.0 },
     H: { type: 'way', refs: [ 'E', 'F', 'G' ] },
     I: { type: 'relation', members: [ 'D', 'H' ] }
   }
@@ -55,7 +55,7 @@ test('relation of ways', function (t) {
   function ready () {
     var q0 = [[62,63],[-145.5,-144.5]]
     var ex0 = [
-      { type: 'node', loc: [ 62.1, -145.1 ], id: names.E },
+      { type: 'node', lat: 62.1, lon: -145.1, id: names.E },
       { type: 'way', refs: [ names.E, names.F, names.G ], id: names.H },
       { type: 'relation', members: [ names.D, names.H ], id: names.I }
     ].sort(idcmp)

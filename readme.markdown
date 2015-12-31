@@ -46,14 +46,14 @@ Now we can create a few nodes and search with a bounding box query:
 
 ```
 $ mkdir /tmp/osm-p2p
-$ node db.js create '{"type":"node","loc":[64.6,-147.8]}'
+$ node db.js create '{"type":"node","lat":64.6,"lon":-147.8}'
 400427819db37b43
-$ node db.js create '{"type":"node","loc":[64.3,-148.2]}'
+$ node db.js create '{"type":"node","lat":64.3,"lon":-148.2}'
 76edd8b6d52da3fb
-$ node db.js create '{"type":"node","loc":[64.5,-147.3]}'
+$ node db.js create '{"type":"node","lat":64.5,"lon":-147.3}'
 013d2331efaba7a5
 $ node db.js query 64.1,64.6 -148,-147
-{ type: 'node', loc: [ 64.5, -147.3 ], id: '013d2331efaba7a5' }
+{ type: 'node', lat: 64.5, lon: -147.3, id: '013d2331efaba7a5' }
 ```
 
 We can make a `way` document that refers to a list of `node` documents:
@@ -69,7 +69,7 @@ will turn up in the results:
 
 ```
 $ node db.js query 64.1,64.6 -148,-147
-{ type: 'node', loc: [ 64.5, -147.3 ], id: '013d2331efaba7a5' }
+{ type: 'node', lat: 64.5, lon: -147.3, id: '013d2331efaba7a5' }
 { type: 'way',
   refs: [ '400427819db37b43', '76edd8b6d52da3fb', '013d2331efaba7a5' ],
   id: '611336e6def6bd93' }
@@ -104,7 +104,7 @@ source of truth.
 Store a new document from `doc`. `cb(err, id, node)` fires with the generated
 OSM `id` and the `node` from the underlying hyperlog.
 
-* Nodes should have a `doc.loc` array with `[lat,lon]` coordinate pairs.
+* Nodes should have `doc.lat` and `doc.lon` coordinates.
 * Ways should have an array of OSM keys as `doc.refs`.
 * Relations should have an array of OSM keys as `doc.members`.
 

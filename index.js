@@ -29,8 +29,9 @@ function DB (opts) {
     kdbtree: kdbtree,
     types: [ 'float', 'float' ],
     map: function (row) {
-      if (row.value && row.value.v && Array.isArray(row.value.v.loc)) {
-        return row.value.v.loc
+      var v = row.value && row.value.v
+      if (v && v.lat !== undefined && v.lon !== undefined) {
+        return [ v.lat, v.lon ]
       }
     }
   })

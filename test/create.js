@@ -19,9 +19,9 @@ test('create 3 nodes and a way', function (t) {
     size: 4096
   })
   var docs = {
-    A: { type: 'node', loc: [ 64.5, -147.3 ] },
-    B: { type: 'node', loc: [ 63.9, -147.6 ] },
-    C: { type: 'node', loc: [ 64.2, -146.5 ] },
+    A: { type: 'node', lat: 64.5, lon: -147.3 },
+    B: { type: 'node', lat: 63.9, lon: -147.6 },
+    C: { type: 'node', lat: 64.2, lon: -146.5 },
     D: { type: 'way', refs: [ 'A', 'B', 'C' ] }
   }
   var names = {}
@@ -46,9 +46,9 @@ test('create 3 nodes and a way', function (t) {
   function ready () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
-      { type: 'node', loc: [ 64.5, -147.3 ], id: names.A },
-      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
-      { type: 'node', loc: [ 64.2, -146.5 ], id: names.C },
+      { type: 'node', lat: 64.5, lon: -147.3, id: names.A },
+      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
+      { type: 'node', lat: 64.2, lon: -146.5, id: names.C },
       { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
@@ -61,7 +61,7 @@ test('create 3 nodes and a way', function (t) {
     })
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
-      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
+      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
       { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {

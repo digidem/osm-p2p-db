@@ -19,9 +19,9 @@ test('update node', function (t) {
     size: 4096
   })
   var docs = {
-    A: { type: 'node', loc: [ 64.5, -147.3 ] },
-    B: { type: 'node', loc: [ 63.9, -147.6 ] },
-    C: { type: 'node', loc: [ 64.2, -146.5 ] },
+    A: { type: 'node', lat: 64.5, lon: -147.3 },
+    B: { type: 'node', lat: 63.9, lon: -147.6 },
+    C: { type: 'node', lat: 64.2, lon: -146.5 },
     D: { type: 'way', refs: [ 'A', 'B', 'C' ] }
   }
   var names = {}
@@ -44,7 +44,7 @@ test('update node', function (t) {
   })()
 
   function ready () {
-    var newdoc = { type: 'node', loc: [ 62.5, -146.2 ] }
+    var newdoc = { type: 'node', lat: 62.5, lon: -146.2 }
     osm.put(names.C, newdoc, function (err) {
       t.ifError(err)
       check()
@@ -54,8 +54,8 @@ test('update node', function (t) {
   function check () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
-      { type: 'node', loc: [ 64.5, -147.3 ], id: names.A },
-      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
+      { type: 'node', lat: 64.5, lon: -147.3, id: names.A },
+      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
       { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
@@ -64,8 +64,8 @@ test('update node', function (t) {
     })
     var q1 = [[62,64],[-149.5,-146]]
     var ex1 = [
-      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
-      { type: 'node', loc: [ 62.5, -146.2 ], id: names.C },
+      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
+      { type: 'node', lat: 62.5, lon: -146.2, id: names.C },
       { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {

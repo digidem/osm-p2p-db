@@ -26,9 +26,9 @@ test('fork', function (t) {
     size: 4096
   })
   var docs = {
-    A: { type: 'node', loc: [ 64.5, -147.3 ] },
-    B: { type: 'node', loc: [ 63.9, -147.6 ] },
-    C: { type: 'node', loc: [ 64.2, -146.5 ] },
+    A: { type: 'node', lat: 64.5, lon: -147.3 },
+    B: { type: 'node', lat: 63.9, lon: -147.6 },
+    C: { type: 'node', lat: 64.2, lon: -146.5 },
     D: { type: 'way', refs: [ 'A', 'B', 'C' ] }
   }
   var names = {}
@@ -55,8 +55,8 @@ test('fork', function (t) {
     var r1 = osm1.log.replicate()
     r0.pipe(r1).pipe(r0)
     r0.once('end', function () {
-      var newdoc0 = { type: 'node', loc: [ 62.5, -146.2 ] }
-      var newdoc1 = { type: 'node', loc: [ 62.4, -146.3 ] }
+      var newdoc0 = { type: 'node', lat: 62.5, lon: -146.2 }
+      var newdoc1 = { type: 'node', lat: 62.4, lon: -146.3 }
       osm0.put(names.C, newdoc0, function (err) {
         t.ifError(err)
         osm1.put(names.C, newdoc1, function (err) {
@@ -79,8 +79,8 @@ test('fork', function (t) {
   function check () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
-      { type: 'node', loc: [ 64.5, -147.3 ], id: names.A },
-      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
+      { type: 'node', lat: 64.5, lon: -147.3, id: names.A },
+      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
       { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
     ].sort(idcmp)
     osm0.query(q0, function (err, res) {
@@ -93,9 +93,9 @@ test('fork', function (t) {
     })
     var q1 = [[62,64],[-149.5,-146]]
     var ex1 = [
-      { type: 'node', loc: [ 63.9, -147.6 ], id: names.B },
-      { type: 'node', loc: [ 62.5, -146.2 ], id: names.C },
-      { type: 'node', loc: [ 62.4, -146.3 ], id: names.C },
+      { type: 'node', lat: 63.9, lon: -147.6, id: names.B },
+      { type: 'node', lat: 62.5, lon: -146.2, id: names.C },
+      { type: 'node', lat: 62.4, lon: -146.3, id: names.C },
       { type: 'way', refs: [ names.A, names.B, names.C ], id: names.D }
     ].sort(idcmp)
     osm0.query(q1, function (err, res) {
@@ -110,6 +110,8 @@ test('fork', function (t) {
 })
 
 function idcmp (a, b) {
-  if (a.id === b.id) return a.loc.join(',') < b.loc.join(',') ? -1 : 1
+  var aloc = a.lat + ',' + a.lon
+  var bloc = b.lat + ',' + b.lon
+  if (a.id === b.id) return aloc < bloc ? -1 : 1
   return a.id < b.id ? -1 : 1
 }
