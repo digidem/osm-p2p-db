@@ -132,7 +132,10 @@ DB.prototype._onpt = function (pt, seen, cb) {
   var res = [], pending = 2
   self.log.get(link, function (err, doc) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
-      res.push(xtend(doc.value.v, { id: doc.value.k }))
+      res.push(xtend(doc.value.v, {
+        id: doc.value.k,
+        version: doc.key
+      }))
     }
     if (--pending === 0) cb(null, res)
   })
@@ -144,7 +147,10 @@ DB.prototype._onpt = function (pt, seen, cb) {
       pending++
       self.log.get(link, function (err, doc) {
         if (doc && doc.value && doc.value.k && doc.value.v) {
-          res.push(xtend(doc.value.v, { id: doc.value.k }))
+          res.push(xtend(doc.value.v, {
+            id: doc.value.k,
+            version: doc.key
+          }))
         }
         if (--pending === 0) cb(null, res)
       })
