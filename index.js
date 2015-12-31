@@ -158,13 +158,13 @@ DB.prototype._onpt = function (pt, seen, cb) {
 
 DB.prototype.queryStream = function (q, opts) {
   var self = this
+  var stream = through.obj(write)
+  var seen = {}
   self.ready(function () {
     var r = self.kdb.queryStream(q, opts)
     r.on('error', stream.emit.bind(stream, 'error'))
     r.pipe(stream)
   })
-  var stream = through.obj(write)
-  var seen = {}
   return readonly(stream)
 
   function write (row, enc, next) {
