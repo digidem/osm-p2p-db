@@ -29,10 +29,14 @@ function DB (opts) {
     kdbtree: kdbtree,
     types: [ 'float', 'float' ],
     map: function (row) {
-      var v = row.value && row.value.v
+      if (!row.value) return null
+      var v = row.value.v, d = row.value.d
       if (v && v.lat !== undefined && v.lon !== undefined) {
-        return [ v.lat, v.lon ]
+        return { type: 'put', point: ptf(v) }
+      } else if (d && Array.isArray(row.value.points)) {
+        return { type: 'del', points: row.value.points.map(ptf) }
       }
+      function ptf (x) { return [ x.lat, x.lon ] }
     }
   })
   self.refdb = sub(self.db, 'rx', { valueEncoding: 'json' })
@@ -95,6 +99,31 @@ DB.prototype.create = function (value, opts, cb) {
 
 DB.prototype.put = function (key, value, opts, cb) {
   this.kv.put(key, value, opts, cb)
+}
+
+DB.prototype.del = function (key, opts, cb) {
+  var self = this
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+  cb = once(cb || noop)
+  self.kv.get(key, function (err, values) {
+    var pending = 1
+    var doc = {
+      d: key,
+      points: []
+    }
+    Object.keys(values).forEach(function (ln) {
+      var v = values[ln] || {}
+      if (v.lat !== undefined && v.lon !== undefined) {
+        doc.points.push({ lat: v.lat, lon: v.lon })
+      }
+    })
+    if (doc.points.length === 0) delete doc.points
+    self.log.add(Object.keys(values), doc, cb)
+  })
 }
 
 DB.prototype.get = function (key, opts, cb) {
