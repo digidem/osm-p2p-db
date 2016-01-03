@@ -111,17 +111,18 @@ DB.prototype.del = function (key, opts, cb) {
   cb = once(cb || noop)
   self.kv.get(key, function (err, values) {
     var pending = 1
-    var doc = {
-      d: key,
-      points: []
-    }
+    var doc = { d: key }
     Object.keys(values).forEach(function (ln) {
       var v = values[ln] || {}
       if (v.lat !== undefined && v.lon !== undefined) {
+        if (!doc.points) doc.points = []
         doc.points.push({ lat: v.lat, lon: v.lon })
       }
+      if (Array.isArray(v.refs)) {
+        if (!doc.refs) doc.refs = []
+        doc.refs.push.apply(doc.refs, v.refs)
+      }
     })
-    if (doc.points.length === 0) delete doc.points
     self.log.add(Object.keys(values), doc, cb)
   })
 }
