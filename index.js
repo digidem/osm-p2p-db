@@ -42,9 +42,10 @@ function DB (opts) {
   self.refdb = sub(self.db, 'rx', { valueEncoding: 'json' })
   self.refdex = hindex(self.log, sub(self.db, 'ri'), function (row, next) {
     next = once(next)
-    if (!row.value || !row.value.v) return next()
-    var k = row.value.k, v = row.value.v
-    var refs = (v.refs || []).concat(v.members || [])
+    if (!row.value) return next()
+    var k = row.value.k, d = row.value.d, v = row.value.v || {}
+    var refs = (v.refs || row.value.refs || [])
+      .concat(v.members || row.value.members || [])
     var batch = [], pending = 1
 
     refs.forEach(function (ref) {
@@ -55,7 +56,7 @@ function DB (opts) {
         var ln = {}
         links.forEach(function (link) { ln[link] = true })
         row.links.forEach(function (link) { delete ln[link] })
-        ln[row.key] = true
+        if (!d) ln[row.key] = true
         batch.push({ type: 'put', key: ref, value: Object.keys(ln) })
         if (--pending === 0) insert()
       })
