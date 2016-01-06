@@ -1,7 +1,7 @@
 # architecture
 
-This document describes the underlying architecture of osm-p2p-db and some
-background context.
+This document describes the underlying architecture of osm-p2p-db, some
+background context, and rationale for the architecture decisions.
 
 # leveldb
 
@@ -22,6 +22,20 @@ osm-p2p-db accepts an `opts.db` parameter that can be supplied by the C++
 LevelDB implementation in node.js or by the IndexedDB wrappers when in the
 browser.
 
+# chunk-store
+
+Some pieces of osm-p2p-db make use of another storage abstraction for accessing
+fixed-size contiguous blocks. osm-p2p-db expects an `opts.store` that conforms
+to the [abstract-chunk-store][13] API.
+
+Chunk stores are instantiated with a fixed size for every chunk and they provide
+two methods: `put` and `get`. `put` stores a fixed-size buffer at some chunk
+index and `get` retrieves the fixed-size buffer at a chunk index.
+
+On the server, chunk stores can efficiently provide access to files on disk with
+no additional overhead using a module such as [fd-chunk-store][14], but in the
+browser, we have to use an IndexedDB wrapper such as [idb-chunk-store][15].
+
 # hyperlog
 
 osm-p2p-db provides indexes and actions on top of a [hyperlog][3].
@@ -40,9 +54,15 @@ to by that hash is also trustworthy, recursively down to the first document.
 This makes merkle DAGs robust against unreliable hardware, spotty network
 connections, and malicious tampering. It also means that [gossip protocols][4]
 can be safely used for peer to peer data replication, even if some peers are not
-entirely reliable or trustworthy. Merkle DAGs should be familar to many
-programmers because they are the underlying data structure for git and many
-other distributed version control systems.
+entirely reliable or trustworthy.
+
+Merkle DAGs also express an inherent causality of the data, because to link to
+another hash, you must know the hash of its contents. This means that if
+document B links to document A, document A must have come before document B.
+
+Merkle DAGs should be familar to many programmers because they are the
+underlying data structure for git and many other distributed version control
+systems.
 
 The hyperlog constructor expects a [leveldb instance][1] as its first argument
 and the library works in both node and the browser. The hyperlog instance is
@@ -50,6 +70,64 @@ provided in an argument as `opts.log` to avoid stale versioning and to make it
 easier to use the log for other purposes or to present a log with the hyperlog
 API derived from some other underlying implementation for a similar reason as
 `opts.db`.
+
+## hyperlog data model
+
+Each edit to osm-p2p-db creates a new log entry that points back at:
+
+* a single previous entry when there is an update to existing content
+* no previous entries when a new node is created
+* multiple previous entries to merge multiple forks into a single record
+
+There are 3 types of documents in OSM: nodes, ways, and relations. Each document
+contains a `type` field.
+
+Nodes have `lat` and `lon` properties:
+
+```
+{ type: 'node', lat: 65.5, lon: -147.3 }
+```
+
+Ways have an array of `refs`:
+
+```
+{ type: 'way',
+  refs: [ 'a50aa575ae96971b', '1b83545b2b06eaad', 'c328c306ddcce256' ] }
+```
+
+And relations have an array of `members`:
+
+```
+{ type: 'relation',
+  members: [ '9add7e34c83e57bf', 'db9572401fb41196' ] }
+```
+
+When the documents are written to osm-p2p-db, they are given `id` and `version`
+properties.
+
+The `id` is a random hex string that uniquely identifies new documents. Updates
+to existing nodes use the same `id` as the document they replace. Ways and
+relations use arrays of these `id` strings to reference other nodes so that if a
+document changes, any ways and relations that reference the document will point
+at the latest versions.
+
+In OSM, the `id` property is a monotonically increasing integer that uniquely
+identifies documents. The centralized OSM service ensures that two documents
+will not have the same `id`. However, there is no central service to enforce
+monotonically increasing integer `id` values in a p2p architecture so we rely on
+entropy to provide uniqueness. It is exceptionally unlikely that two large
+datasets will contain the same cryptographically random 16-digit hex `id` for
+the scale of data likely to be encountered in osm-p2p-db.
+
+For similar reasons, the `version` property is different in osm-p2p-db than in
+OSM. In OSM, versions are part of an [optimistic locking][11] strategy where
+version numbers monotonically increase by 1 for every change. This cannot work
+for osm-p2p-db because two users could both edit the same document while
+offline, resulting in multiple alternate contents under the same `version`
+values. Instead, osm-p2p-db uses the hash of the contents from the underlying
+hyperlog to provide a value for the `version` property. This way, two versions
+of the same document will never have the same version unless they also have the
+exact same contents.
 
 ## hyperlog replication
 
@@ -147,31 +225,118 @@ stream.pipe(log.replicate()).pipe(stream)
 ```
 
 Or even without any server at all using [webrtc][5] or [bluetooth][6]!
-Or some other transport altogether!
+Or some other transport altogether! With streams we have the flexibility to
+easily [support any combination][16] of compression, encryption, stdin/stdout,
+ssh, or alternative transports that haven't even been invented yet.
 
 The osm-p2p-db instances themselves do not need to get involved in the
 replication process at all, since the osm-p2p-db indexes are already hooked up
 to a live feed of hyperlog updates.
 
-## hyperlog indexes
+## p2p replication
 
-kappa architecture
+An important detail about hyperlogs and hyperlog replication is that the
+replication works according to a fully peer to peer model: each peer has
+unique information that is shared with partners in replication. There is no
+privledged node that centrally coordinates the state of the database.
+There is also no single point of failure that may become corrupted, inoperable,
+stolen, or confiscated. Instead there are many redundant backups.
 
+For mapping projects that are far from grid power and cellular signals,
+redundant backups are a particularly important feature.
 
-materialized views
+If we are operating in these environments with a fully peer to peer model, we
+should also rethink how conflicts are typically handled for data replication. In
+most databases that support replication, when two peers with different updates
+to the same keys try to replicate, the replication will fail or in the worst
+case the entire system goes into "merge conflict" panic mode where nothing can
+be done until the conflict is resolved. These are the failure modes of couchdb
+and git, among many others.
 
+This not only provides a terrible experience for users of the software, it also
+forces an unpleasant and difficult activity that could just as well be deferred
+or handled by more experienced users or at a more appropriate time. Imagine the
+anxiety a merge conflict would create for a user desperately attempting to
+replicate over a slow radio uplink with a small time window and limited battery
+power. This would be the absolute worst time to be poking around in unfamiliar
+and obscure interfaces to carefully merge changes with the other node.
 
+Instead, we can think of our database as a growing list of observations.
+Replication then becomes a simple matter of sharing our observations with a
+peer. If two observations "conflict", then the only honest thing the database
+can really say is that their are two most recent versions of a document.
+Diversity of opinion does not mean we need to enter into an extreme mode that
+demands our full attention for immediate resolution. If we think of the database
+as a repository of truth, it would also be unwise for our database to report
+falsehoods, such as erroneously picking a "winner" for a "conflict" according to
+some necessarily flawed heuristic approximation. There is no general solution to
+the problem of merging conflicts for human-generated data. These issues will
+always require thoughtful human judgement.
 
-# key/value store
+# hyperlog indexes
 
+osm-p2p-db is a [kappa architecture][7]. The basic idea in the kappa
+architecture is that there is an append-only log that stores immutable
+observations. The log feeds into a set of [materialized views][8] that
+pre-compute indexes for aggregate information contained in the log data.
 
+For example, a log in a shop might append a new record for every purchase, and a
+materialized view might show the monthly sales total. Contrast this log-driven
+approach with a database that destructively updates a sales total in place. If
+there are errors in the collection procedure, malicious changes, or a different
+kind of sales total such as yearly needs to be computed, the log can easily
+support these issues whereas the mutable data cannot. The log is the source of
+truth, and many derived truths can be built on top of the log observations.
 
-# spatial trees
+The [hyperlog-index module][9] provides an interface to create materialized
+views on top of a hyperlog. osm-p2p-db is internally composed of 3
+hyperlog-index instances: a key/value store, a kdb tree spatial index, and a
+reference index.
 
-In the future, other trees may be more appropriate.
+Every [hyperlog-index][9] contains an indexing function that receives a record
+from the hyperlog as input and writes to some external data store with its view
+on the data. A tricky feature of hyperlogs is that they are merkle DAGs, which
+may point at many prior documents by their hashes, and indexes that deal with
+key/value data must take into account the inherent potential for forking
+versions.
 
-For example, ways and relations could be stored directly in an
-[interval tree][7]
+## hyperkv
+
+We can borrow a useful idea from [CRDTs][10] called a multi-value register to
+handle forking presentations for key/value data. The multi-value register idea
+is very simple: for every key, always return an array of values. These values
+represent the heads of the merkle DAG for the given key, the documents which are
+not pointed at by any other document.
+
+The [hyperkv][12] module is a hyperlog index used internally by osm-p2p-db that
+provides a multi-value register conflict strategy for the OSM documents.
+The keys given to [hyperkv][12] are handled by the `id` property from the
+[data model](#hyperlog-data-model) and the values are the document bodies.
+
+Lookups by `id` for hyperkv returns an object mapping document hashes to
+document contents and puts and deletes must refer to the hashes of previously
+known documents as `opts.links`.
+
+## spatial trees
+
+The next piece in our architecture is a spatial tree to respond to bounding box
+queries. As documents are written to the hyperlog by [hyperkv][12],
+[hyperlog-kdb-index][13] looks for nodes with `lat` and `lon` properties and
+inserts these coordinate pairs into a [kdb tree][17].
+
+Queries on the kdb tree return all the nodes contained within a bounding box,
+but not the ways or relations that don't directly have `lat` and `lon`
+properties.
+
+## reference index
+
+The reference index is a hyperlog index that associates each node with any
+relations and ways that refer to the node by its `id` in their `refs` or
+`members` arrays.
+
+Bounding box queries on the kdb tree contain only nodes, so the reference index
+augments the queries with ways and relations associated with each node in the
+results.
 
 [1]: https://github.com/level/levelup
 [2]: https://github.com/maxogden/level.js
@@ -179,5 +344,14 @@ For example, ways and relations could be stored directly in an
 [4]: https://en.wikipedia.org/wiki/Gossip_protocol
 [5]: https://github.com/feross/simple-peer
 [6]: https://developer.mozilla.org/en-US/docs/Web/API/BluetoothDevice
-[7]: https://en.wikipedia.org/wiki/Interval_tree
-
+[7]: http://www.kappa-architecture.com/
+[8]: https://en.wikipedia.org/wiki/Materialized_view
+[9]: https://en.wikipedia.org/wiki/Materialized_view
+[10]: https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type
+[11]: http://wiki.openstreetmap.org/wiki/API_v0.6#Version_numbers.2Foptimistic_locking
+[12]: https://npmjs.com/package/hyperkv
+[13]: https://github.com/mafintosh/abstract-chunk-store
+[14]: https://www.npmjs.com/package/fd-chunk-store
+[15]: https://www.npmjs.com/package/idb-chunk-store
+[16]: https://github.com/dominictarr/rpc-stream#rant
+[17]: https://en.wikipedia.org/wiki/K-D-B-tree

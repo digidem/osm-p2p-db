@@ -181,6 +181,10 @@ If both logs have made edits to the same IDs, multiple records will appear for
 the same ID in the results. To merge these "conflicts" back into a single value,
 use `osm.put(id, doc, cb)` to store the desired document value.
 
+# architecture
+
+[read about the internal architecture](doc/architecture.markdown)
+
 # install
 
 ```
