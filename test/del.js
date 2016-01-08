@@ -11,7 +11,7 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('del', function (t) {
-  t.plan(16)
+  t.plan(20)
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -68,7 +68,7 @@ test('del', function (t) {
       { type: 'node', lat: 64.2, lon: -146.5,
         id: names.C, version: versions.C },
       { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D }
+        id: names.F, version: versions.F }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
@@ -83,7 +83,7 @@ test('del', function (t) {
       { type: 'node', lat: 63.9, lon: -147.6,
         id: names.B, version: versions.B },
       { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D }
+        id: names.F, version: versions.F }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)
