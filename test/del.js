@@ -22,7 +22,7 @@ test('del', function (t) {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },
     C: { type: 'node', lat: 64.2, lon: -146.5 },
-    D: { type: 'node', lat: 1.23, lon: 4.56 },
+    D: { type: 'node', lat: 64.123, lon: -147.56 },
     E: { type: 'way', refs: [ 'A', 'B' ] },
     F: { type: 'way', refs: [ 'A', 'B', 'C' ] },
     G: { d: 'E' },
