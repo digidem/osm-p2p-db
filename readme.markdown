@@ -125,6 +125,10 @@ If the document didn't exist previously, it will be created.
 
 The options `opts` are passed to the underlying [hyperkv][4] instance.
 
+By default, hyperkv will merge the most recent known forks into a single fork.
+To add modifications to a fork without merging the changes into other forks,
+set `opts.links` to an array of only the single key you want to update.
+
 [4]: https://npmjs.com/package/hyperkv
 
 ## osm.get(id, opts={}, cb)
