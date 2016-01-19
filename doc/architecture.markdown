@@ -79,26 +79,29 @@ Each edit to osm-p2p-db creates a new log entry that points back at:
 * no previous entries when a new node is created
 * multiple previous entries to merge multiple forks into a single record
 
-There are 3 types of documents in OSM: nodes, ways, and relations. Each document
-contains a `type` field.
+There are 3 types of elements in OSM: nodes, ways, and relations.
+Each element contains a `type` and `changeset` field.
 
 Nodes have `lat` and `lon` properties:
 
 ```
-{ type: 'node', lat: 65.5, lon: -147.3 }
+{ type: 'node', lat: 65.5, lon: -147.3,
+  changeset: 'a227695b32d1c101' }
 ```
 
 Ways have an array of `refs`:
 
 ```
 { type: 'way',
+  changeset: 'a227695b32d1c101',
   refs: [ 'a50aa575ae96971b', '1b83545b2b06eaad', 'c328c306ddcce256' ] }
 ```
 
-And relations have an array of `members`:
+Relations have an array of `members`:
 
 ```
 { type: 'relation',
+  changeset: 'a227695b32d1c101',
   members: [ '9add7e34c83e57bf', 'db9572401fb41196' ] }
 ```
 
@@ -128,6 +131,23 @@ values. Instead, osm-p2p-db uses the hash of the contents from the underlying
 hyperlog to provide a value for the `version` property. This way, two versions
 of the same document will never have the same version unless they also have the
 exact same contents.
+
+### changesets
+
+Each element must refer to a pre-existing changeset. Changesets are a way to
+batch changes up into logical groups. Think of changesets like commits in git.
+
+Changesets should contain tags. Some common tags are `comment` and `created_by`.
+
+Here is an example changeset:
+
+```
+{ type: 'changeset',
+  tags: { comment: 'adding trailheads' } }
+```
+
+Like the other elements, changesets are given `id` and `version` properties
+automatically when they are written to osm-p2p-db.
 
 ## hyperlog replication
 
