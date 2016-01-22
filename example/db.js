@@ -12,8 +12,7 @@ var osmdb = require('../')
 var osm = osmdb({
   log: hyperlog(db.log, { valueEncoding: 'json' }),
   db: db.index,
-  store: fdstore(4096, storefile),
-  size: 4096
+  store: fdstore(4096, storefile)
 })
 
 if (process.argv[2] === 'create') {
