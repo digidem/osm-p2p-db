@@ -19,8 +19,7 @@ var osmdb = require('osm-p2p-db')
 var osm = osmdb({
   log: hyperlog(db.log, { valueEncoding: 'json' }),
   db: db.index,
-  store: fdstore(4096, storefile),
-  size: 4096
+  store: fdstore(4096, storefile)
 })
 
 if (process.argv[2] === 'create') {
@@ -97,7 +96,6 @@ Create a new `osm` instance with:
 * `opts.log` - a [hyperlog][1] with a valueEncoding of `json`
 * `opts.db` - a [levelup][2] instance to store index data
 * `opts.store` - an [abstract-chunk-store][3] instance
-* `opts.size` - the size of the chunks in `opts.store`
 
 You may safely delete the index database whenever you like. The index data is
 automatically regenerated. This is very useful if there are breaking changes to

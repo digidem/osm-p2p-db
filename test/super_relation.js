@@ -34,8 +34,7 @@ test('relations of relations', function (t) {
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
-    store: fdstore(4096, storefile),
-    size: 4096
+    store: fdstore(4096, storefile)
   })
   var names = {}
   var nodes = {}

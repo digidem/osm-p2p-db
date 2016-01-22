@@ -15,8 +15,7 @@ test('del', function (t) {
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
-    store: fdstore(4096, storefile),
-    size: 4096
+    store: fdstore(4096, storefile)
   })
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },

@@ -16,8 +16,7 @@ test('fork', function (t) {
   var osm0 = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
-    store: fdstore(4096, storefile0),
-    size: 4096
+    store: fdstore(4096, storefile0)
   })
   var osm1 = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
