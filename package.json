@@ -27,6 +27,7 @@
     "has": "^1.0.1",
     "hyperkv": "^1.4.0",
     "hyperlog-index": "^4.0.0",
+    "hyperlog-join": "^1.0.0",
     "hyperlog-kdb-index": "^2.1.0",
     "kdb-tree-store": "^3.0.2",
     "once": "^1.3.3",

@@ -19,10 +19,11 @@ test('changeset', function (t) {
     size: 4096
   })
   var docs = {
-    A: { type: 'node', lat: 64.5, lon: -147.3 },
-    B: { type: 'node', lat: 63.9, lon: -147.6 },
-    C: { type: 'node', lat: 64.2, lon: -146.5 },
-    D: { type: 'way', refs: [ 'A', 'B', 'C' ] }
+    A: { type: 'changeset', tags: { comment: 'whatever' } },
+    B: { type: 'node', lat: 64.5, lon: -147.3, changeset: 'A' },
+    C: { type: 'node', lat: 63.9, lon: -147.6, changeset: 'A' },
+    D: { type: 'node', lat: 64.2, lon: -146.5, changeset: 'A' },
+    E: { type: 'way', refs: [ 'B', 'C', 'D' ], changeset: 'A' }
   }
   var names = {}
   var nodes = {}
@@ -35,6 +36,9 @@ test('changeset', function (t) {
     var doc = docs[key]
     if (doc.refs) {
       doc.refs = doc.refs.map(function (ref) { return names[ref] })
+    }
+    if (doc.changeset) {
+      doc.changeset = names[doc.changeset]
     }
     osm.create(doc, function (err, k, node) {
       t.ifError(err)
@@ -49,13 +53,13 @@ test('changeset', function (t) {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
       { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
+        id: names.B, version: versions.B, changeset: names.A },
       { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
+        id: names.C, version: versions.C, changeset: names.A },
       { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C },
-      { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D }
+        id: names.D, version: versions.D, changeset: names.A },
+      { type: 'way', refs: [ names.B, names.C, names.D ],
+        id: names.E, version: versions.E, changeset: names.A }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
@@ -68,9 +72,9 @@ test('changeset', function (t) {
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
       { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D }
+        id: names.C, version: versions.C, changeset: names.A },
+      { type: 'way', refs: [ names.B, names.C, names.D ],
+        id: names.E, version: versions.E, changeset: names.A }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)

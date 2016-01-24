@@ -9,6 +9,7 @@ var once = require('once')
 var through = require('through2')
 var readonly = require('read-only-stream')
 var xtend = require('xtend')
+var join = require('hyperlog-join')
 
 module.exports = DB
 
@@ -39,48 +40,39 @@ function DB (opts) {
       function ptf (x) { return [ x.lat, x.lon ] }
     }
   })
-  self.refdb = sub(self.db, 'rx', { valueEncoding: 'json' })
-  self.refdex = hindex(self.log, sub(self.db, 'ri'), function (row, next) {
-    next = once(next)
-    if (!row.value) return next()
-    var k = row.value.k, d = row.value.d, v = row.value.v || {}
-    var refs = (v.refs || row.value.refs || [])
-      .concat(v.members || row.value.members || [])
-    var batch = [], pending = 1
-
-    refs.forEach(function (ref) {
-      pending++
-      self.refdb.get(ref, function (err, links) {
-        if (err && !notFound(err)) return next(err)
-        if (!links) links = []
-        var ln = {}
-        links.forEach(function (link) { ln[link] = true })
-        row.links.forEach(function (link) { delete ln[link] })
-        if (!d) ln[row.key] = true
-        batch.push({ type: 'put', key: ref, value: Object.keys(ln) })
-        if (--pending === 0) insert()
+  self.refs = join({
+    log: self.log,
+    db: sub(self.db, 'r'),
+    map: function (row) {
+      if (!row.value) return next()
+      var k = row.value.k, d = row.value.d, v = row.value.v || {}
+      var refs = (v.refs || row.value.refs || [])
+        .concat(v.members || row.value.members || [])
+      var ops = []
+      refs.forEach(function (ref) {
+        row.links.forEach(function (link) {
+          return { type: 'del', key: ref, rowKey: link }
+        })
+        ops.push({ type: 'put', key: ref, value: k })
       })
-    })
-    if (--pending === 0) insert()
-
-    function insert () {
-      self.refdb.batch(batch, next)
+      return ops
     }
   })
 }
 
 DB.prototype._links = function (link, cb) {
   var self = this
-  self.log.get(link, function (err, doc) {
-    if (err) cb(null, [])
-    else self.refdb.get(doc.value.k, cb)
+  self.refs.list(link, function (err, rows) {
+    if (err) cb(err)
+    else cb(null, rows.map(keyf))
   })
+  function keyf (row) { return row.key }
 }
 
 DB.prototype.ready = function (cb) {
   var self = this
   var pending = 2
-  self.refdex.ready(ready)
+  self.refs.dex.ready(ready)
   self.kdb.ready(ready)
   function ready () { if (--pending === 0) cb() }
 }
@@ -129,7 +121,12 @@ DB.prototype.del = function (key, opts, cb) {
 }
 
 DB.prototype.get = function (key, opts, cb) {
-  this.kv.get(key, opts, cb)
+  this.kv.get(key, opts, function (err, doc) {
+    if (err) return cb(err)
+    else if (doc.type === 'changeset') {
+      //...
+    } else cb(null, doc)
+  })
 }
 
 DB.prototype.query = function (q, opts, cb) {
