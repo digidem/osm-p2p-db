@@ -62,9 +62,12 @@ function DB (opts) {
 
 DB.prototype._links = function (link, cb) {
   var self = this
-  self.refs.list(link, function (err, rows) {
-    if (err) cb(err)
-    else cb(null, rows.map(keyf))
+  self.log.get(link, function (err, doc) {
+    if (err) return cb(err)
+    self.refs.list(doc.value.k, function (err, rows) {
+      if (err) cb(err)
+      else cb(null, rows.map(keyf))
+    })
   })
   function keyf (row) { return row.key }
 }
