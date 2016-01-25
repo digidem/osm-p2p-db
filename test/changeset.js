@@ -52,12 +52,12 @@ test('changeset', function (t) {
   })()
 
   function ready () {
-    osm.changes(names.A, function (err, keys) {
+    osm.getChanges(names.A, function (err, keys) {
       t.ifError(err)
       var expected = [ versions.B, versions.C, versions.D, versions.E ]
       t.deepEqual(keys, expected.sort())
     })
-    osm.changes(names.F, function (err, keys) {
+    osm.getChanges(names.F, function (err, keys) {
       t.ifError(err)
       var expected = [ versions.G ]
       t.deepEqual(keys, expected.sort())

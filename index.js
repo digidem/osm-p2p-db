@@ -44,8 +44,8 @@ function DB (opts) {
     log: self.log,
     db: sub(self.db, 'r'),
     map: function (row) {
-      if (!row.value) return next()
-      var k = row.value.k, d = row.value.d, v = row.value.v || {}
+      if (!row.value) return
+      var k = row.value.k, v = row.value.v || {}
       var refs = (v.refs || row.value.refs || [])
         .concat(v.members || row.value.members || [])
       var ops = []
@@ -56,6 +56,16 @@ function DB (opts) {
         if (k) ops.push({ type: 'put', key: ref, value: k })
       })
       return ops
+    }
+  })
+  self.changeset = join({
+    log: self.log,
+    db: sub(self.db, 'c'),
+    map: function (row) {
+      if (!row.value) return
+      var v = row.value.v
+      if (!v || !v.changeset) return
+      return { type: 'put', key: v.changeset, value: 0 }
     }
   })
 }
@@ -212,6 +222,29 @@ DB.prototype.queryStream = function (q, opts) {
       if (res) res.forEach(function (r) { tr.push(r) })
       next()
     })
+  }
+}
+
+DB.prototype.getChanges = function (key, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  var r = this.changeset.list(key, opts)
+  var rows = cb ? [] : null
+  if (cb) cb = once(cb)
+  var stream = r.pipe(through.obj(write, end))
+  if (cb) r.once('error', cb)
+  return readonly(stream)
+
+  function write (row, enc, next) {
+    if (rows) rows.push(row.key)
+    this.push(row.key)
+    next()
+  }
+  function end (next) {
+    if (cb) cb(null, rows)
+    next()
   }
 }
 
