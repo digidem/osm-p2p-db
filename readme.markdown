@@ -111,9 +111,19 @@ source of truth.
 Store a new document from `doc`. `cb(err, id, node)` fires with the generated
 OSM `id` and the `node` from the underlying hyperlog.
 
+Elements are `node`, `way`, and `relation`. Each element should have a `type`
+property that contains the element type as a string.
+
 * Nodes should have `doc.lat` and `doc.lon` coordinates.
 * Ways should have an array of OSM keys as `doc.refs`.
 * Relations should have an array of OSM keys as `doc.members`.
+
+Another type of document is a `changeset`.
+Each element should have a `changeset` property that refers to the id of a
+`changeset` document.
+
+It is recommended to use `tags.comment` to store free-form text describing the
+changeset.
 
 ## osm.put(id, doc, opts={}, cb)
 
@@ -155,6 +165,13 @@ a bounding box.
 
 Each object in the stream is a document augmented with an `id` property and a
 `version` property that is the hash key from the underlying hyperlog.
+
+## var rstream = osm.getChanges(id, cb)
+
+Get the list of document ids in a changeset by a changeset `id`.
+
+The document ids are available as `cb(err, ids)` and as the objects in the
+readable object stream `rstream`.
 
 # browser
 
