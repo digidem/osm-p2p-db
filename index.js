@@ -248,10 +248,6 @@ DB.prototype.getChanges = function (key, opts, cb) {
   }
 }
 
-DB.prototype.listChangesets = function (opts) {
-  return this.changeset.relations()
-}
-
 function noop () {}
 function notFound (err) {
   return /^notfound/i.test(err.message) || err.notFound

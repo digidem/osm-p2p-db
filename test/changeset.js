@@ -11,7 +11,7 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('changeset', function (t) {
-  t.plan(17)
+  t.plan(15)
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -70,12 +70,6 @@ test('changeset', function (t) {
       t.ifError(err)
       t.equal(doc[Object.keys(doc)[0]].tags.comment, 'blah')
     })
-
-    var expected = [ names.A, names.F ].sort()
-    osm.listChangesets()
-      .on('data', function (row) {
-        t.deepEqual(row, expected.shift())
-      })
   }
 })
 
