@@ -51,9 +51,9 @@ function DB (opts) {
       var ops = []
       refs.forEach(function (ref) {
         row.links.forEach(function (link) {
-          return { type: 'del', key: ref, rowKey: link }
+          ops.push({ type: 'del', key: ref, rowKey: link })
         })
-        ops.push({ type: 'put', key: ref, value: k })
+        if (k) ops.push({ type: 'put', key: ref, value: k })
       })
       return ops
     }
