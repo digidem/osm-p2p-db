@@ -147,6 +147,14 @@ Get a document as `cb(err, docs)` by its OSM `id`.
 
 The options `opts` are passed to the underlying [hyperkv][4] instance.
 
+## osm.kv
+
+You can get at the [hyperkv][4] instance directly to perform more operations
+using `osm.kv`.
+
+For example, you can use `osm.kv.createReadStream()` to list all the id/value
+pairs in the database.
+
 ## osm.query(q, opts, cb)
 
 Query for all nodes, ways, and relations in the query given by the array `q`.
