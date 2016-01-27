@@ -10,8 +10,11 @@ var through = require('through2')
 var readonly = require('read-only-stream')
 var xtend = require('xtend')
 var join = require('hyperlog-join')
+var inherits = require('inherits')
+var EventEmitter = require('events').EventEmitter
 
 module.exports = DB
+inherits(DB, EventEmitter)
 
 function DB (opts) {
   var self = this
@@ -22,6 +25,7 @@ function DB (opts) {
     log: self.log,
     db: sub(self.db, 'kv')
   })
+  self.kv.on('error', function (err) { self.emit('error', err) })
   self.kdb = hyperkdb({
     log: self.log,
     store: opts.store,
@@ -40,6 +44,7 @@ function DB (opts) {
       function ptf (x) { return [ x.lat, x.lon ] }
     }
   })
+  self.kdb.on('error', function (err) { self.emit('error', err) })
   self.refs = join({
     log: self.log,
     db: sub(self.db, 'r'),
@@ -58,6 +63,7 @@ function DB (opts) {
       return ops
     }
   })
+  self.refs.on('error', function (err) { self.emit('error', err) })
   self.changeset = join({
     log: self.log,
     db: sub(self.db, 'c'),
@@ -68,6 +74,7 @@ function DB (opts) {
       return { type: 'put', key: v.changeset, value: 0 }
     }
   })
+  self.changeset.on('error', function (err) { self.emit('error', err) })
 }
 
 DB.prototype._links = function (link, cb) {

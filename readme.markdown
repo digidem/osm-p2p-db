@@ -181,6 +181,10 @@ Get the list of document ids in a changeset by a changeset `id`.
 The document ids are available as `cb(err, ids)` and as the objects in the
 readable object stream `rstream`.
 
+## osm.on('error', function (err) {})
+
+Handle errors from the underlying indexes with the `'error'` event.
+
 # browser
 
 To use this module in the browser, use [level-browserify][5] to provide the
