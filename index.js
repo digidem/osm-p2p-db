@@ -30,7 +30,7 @@ function DB (opts) {
     log: self.log,
     store: opts.store,
     db: sub(self.db, 'kdb'),
-    size: opts.store.chunkSize,
+    size: opts.store.chunkLength,
     kdbtree: kdbtree,
     types: [ 'float', 'float' ],
     map: function (row) {
