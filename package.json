@@ -32,7 +32,7 @@
     "inherits": "^2.0.1",
     "kdb-tree-store": "^3.0.2",
     "once": "^1.3.3",
-    "randombytes": "^2.0.1",
+    "randombytes": "2.0.1",
     "read-only-stream": "^2.0.0",
     "subleveldown": "^2.1.0",
     "through2": "^2.0.0",
