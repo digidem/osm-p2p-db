@@ -155,6 +155,11 @@ using `osm.kv`.
 For example, you can use `osm.kv.createReadStream()` to list all the id/value
 pairs in the database.
 
+## osm.log
+
+The [hyperlog][1] instance is available as the `opts.log` property if you need
+to get at it directly later.
+
 ## osm.query(q, opts, cb)
 
 Query for all nodes, ways, and relations in the query given by the array `q`.
