@@ -50,14 +50,22 @@ function DB (opts) {
     map: function (row) {
       if (!row.value) return
       var k = row.value.k, v = row.value.v || {}
-      var refs = (v.refs || row.value.refs || [])
-        .concat(v.members || row.value.members || [])
       var ops = []
+      var refs = v.refs || row.value.refs || []
       refs.forEach(function (ref) {
         row.links.forEach(function (link) {
           ops.push({ type: 'del', key: ref, rowKey: link })
         })
         if (k) ops.push({ type: 'put', key: ref, value: k })
+      })
+      var members = v.members || row.value.members || []
+      members.forEach(function (member) {
+        if (typeof member === 'string') member = { ref: member }
+        if (typeof member.ref !== 'string') return
+        row.links.forEach(function (link) {
+          ops.push({ type: 'del', key: member.ref, rowKey: link })
+        })
+        if (k) ops.push({ type: 'put', key: member.ref, value: k })
       })
       return ops
     }
