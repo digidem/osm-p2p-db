@@ -116,7 +116,9 @@ property that contains the element type as a string.
 
 * Nodes should have `doc.lat` and `doc.lon` coordinates.
 * Ways should have an array of OSM keys as `doc.refs`.
-* Relations should have an array of OSM keys as `doc.members`.
+* Relations should have an array member objects as `doc.members`.
+Each member object has a the `member.type` of the document pointed at by
+`member.ref` and optionally a [`member.role`][7].
 
 Another type of document is a `changeset`.
 Each element should have a `changeset` property that refers to the id of a
@@ -124,6 +126,8 @@ Each element should have a `changeset` property that refers to the id of a
 
 It is recommended to use `tags.comment` to store free-form text describing the
 changeset.
+
+[7]: http://wiki.openstreetmap.org/wiki/Relation#Roles
 
 ## osm.put(id, doc, opts={}, cb)
 
