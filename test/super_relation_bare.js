@@ -20,21 +20,13 @@ test('relations of relations', function (t) {
     F: { type: 'node', lat: 62.3, lon: -146.4 },
     G: { type: 'node', lat: 62.6, lon: -146.0 },
     H: { type: 'way', refs: [ 'E', 'F', 'G' ] },
-    I: { type: 'relation', members: [
-      { type: 'way', ref: 'D' },
-      { type: 'way', ref: 'H' }
-    ] },
+    I: { type: 'relation', members: [ 'D', 'H' ] },
     J: { type: 'node', lat: 61.5, lon: -142.4 },
     K: { type: 'node', lat: 61.0, lon: -141.9 },
     L: { type: 'node', lat: 62.4, lon: -143.1 },
     M: { type: 'way', refs: [ 'J', 'K', 'L' ] },
-    N: { type: 'relation', members: [
-      { type: 'way', ref: 'M' }
-    ] },
-    O: { type: 'relation', members: [
-      { type: 'relation', ref: 'I' },
-      { type: 'relation', ref: 'N' }
-    ] }
+    N: { type: 'relation', members: [ 'M' ] },
+    O: { type: 'relation', members: [ 'I', 'N' ] }
   }
   var keys = Object.keys(docs).sort()
   t.plan(keys.length + 4)
@@ -55,9 +47,9 @@ test('relations of relations', function (t) {
     if (doc.refs) {
       doc.refs = doc.refs.map(function (ref) { return names[ref] })
     }
-    ;(doc.members || []).forEach(function (member) {
-      if (member.ref) member.ref = names[member.ref]
-    })
+    if (doc.members) {
+      doc.members = doc.members.map(function (ref) { return names[ref] })
+    }
     osm.create(doc, function (err, k, node) {
       t.ifError(err)
       names[key] = k
@@ -74,17 +66,9 @@ test('relations of relations', function (t) {
         id: names.E, version: versions.E },
       { type: 'way', refs: [ names.E, names.F, names.G ],
         id: names.H, version: versions.H },
-      { type: 'relation',
-        members: [
-          { type: 'way', ref: names.D },
-          { type: 'way', ref: names.H }
-        ],
+      { type: 'relation', members: [ names.D, names.H ],
         id: names.I, version: versions.I },
-      { type: 'relation',
-        members: [
-          { type: 'relation', ref: names.I },
-          { type: 'relation', ref: names.N }
-        ],
+      { type: 'relation', members: [ names.I, names.N ],
         id: names.O, version: versions.O }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
