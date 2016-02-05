@@ -82,12 +82,16 @@ Each edit to osm-p2p-db creates a new log entry that points back at:
 There are 3 types of elements in OSM: nodes, ways, and relations.
 Each element contains a `type` and `changeset` field.
 
+---
+
 Nodes have `lat` and `lon` properties:
 
 ```
 { type: 'node', lat: 65.5, lon: -147.3,
   changeset: 'a227695b32d1c101' }
 ```
+
+---
 
 Ways have an array of `refs`:
 
@@ -96,14 +100,23 @@ Ways have an array of `refs`:
   changeset: 'a227695b32d1c101',
   refs: [ 'a50aa575ae96971b', '1b83545b2b06eaad', 'c328c306ddcce256' ] }
 ```
+---
 
-Relations have an array of `members`:
+[Relations][18] have an array of `members`:
 
 ```
 { type: 'relation',
   changeset: 'a227695b32d1c101',
-  members: [ '9add7e34c83e57bf', 'db9572401fb41196' ] }
+  members: [
+    { type: 'way', ref: '9add7e34c83e57bf' },
+    { type: 'node', ref: 'db9572401fb41196' }
+  ] }
 ```
+
+Each member has the `type` of the document pointed at by `ref` and an optional
+[`role` property][19].
+
+---
 
 When the documents are written to osm-p2p-db, they are given `id` and `version`
 properties.
@@ -375,3 +388,5 @@ results.
 [15]: https://www.npmjs.com/package/idb-chunk-store
 [16]: https://github.com/dominictarr/rpc-stream#rant
 [17]: https://en.wikipedia.org/wiki/K-D-B-tree
+[18]: http://wiki.openstreetmap.org/wiki/Relation
+[19]: http://wiki.openstreetmap.org/wiki/Relation#Roles

@@ -23,7 +23,7 @@ test('relation of ways', function (t) {
     I: { type: 'relation', members: [
       { type: 'way', ref: 'D' },
       { type: 'way', ref: 'H' },
-      { type: 'node', role:'platform', ref: 'G' }
+      { type: 'node', ref: 'G' }
     ] }
   }
   var keys = Object.keys(docs).sort()
@@ -68,7 +68,7 @@ test('relation of ways', function (t) {
         members: [
           { type: 'way', ref: names.D },
           { type: 'way', ref: names.H },
-          { type: 'node', role: 'platform', ref: names.G }
+          { type: 'node', ref: names.G }
         ],
         id: names.I, version: versions.I }
     ].sort(idcmp)
