@@ -117,7 +117,7 @@ property that contains the element type as a string.
 * Nodes should have `doc.lat` and `doc.lon` coordinates.
 * Ways should have an array of OSM keys as `doc.refs`.
 * Relations should have an array member objects as `doc.members`.
-Each member object has a the `member.type` of the document pointed at by
+Each member object has a `member.type` of the document pointed at by
 `member.ref` and optionally a [`member.role`][7].
 
 Another type of document is a `changeset`.
