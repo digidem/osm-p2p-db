@@ -88,7 +88,7 @@ Nodes have `lat` and `lon` properties:
 
 ```
 { type: 'node', lat: 65.5, lon: -147.3,
-  changeset: 'a227695b32d1c101' }
+  changeset: '11684423598651588865' }
 ```
 
 ---
@@ -97,8 +97,8 @@ Ways have an array of `refs`:
 
 ```
 { type: 'way',
-  changeset: 'a227695b32d1c101',
-  refs: [ 'a50aa575ae96971b', '1b83545b2b06eaad', 'c328c306ddcce256' ] }
+  changeset: '11684423598651588865',
+  refs: [ '11892499690884077339', '1982521011513780909', '14062704270722785878' ] }
 ```
 ---
 
@@ -106,10 +106,10 @@ Ways have an array of `refs`:
 
 ```
 { type: 'relation',
-  changeset: 'a227695b32d1c101',
+  changeset: '11684423598651588865',
   members: [
-    { type: 'way', ref: '9add7e34c83e57bf' },
-    { type: 'node', ref: 'db9572401fb41196' }
+    { type: 'way', ref: '11159214216856885183' },
+    { type: 'node', ref: '15822678485571473814' }
   ] }
 ```
 
@@ -121,19 +121,19 @@ Each member has the `type` of the document pointed at by `ref` and an optional
 When the documents are written to osm-p2p-db, they are given `id` and `version`
 properties.
 
-The `id` is a random hex string that uniquely identifies new documents. Updates
-to existing nodes use the same `id` as the document they replace. Ways and
-relations use arrays of these `id` strings to reference other nodes so that if a
-document changes, any ways and relations that reference the document will point
-at the latest versions.
+The `id` is a random decimal string that uniquely identifies new documents.
+Updates to existing nodes use the same `id` as the document they replace. Ways
+and relations use arrays of these `id` strings to reference other nodes so that
+if a document changes, any ways and relations that reference the document will
+point at the latest versions.
 
 In OSM, the `id` property is a monotonically increasing integer that uniquely
 identifies documents. The centralized OSM service ensures that two documents
 will not have the same `id`. However, there is no central service to enforce
 monotonically increasing integer `id` values in a p2p architecture so we rely on
 entropy to provide uniqueness. It is exceptionally unlikely that two large
-datasets will contain the same cryptographically random 16-digit hex `id` for
-the scale of data likely to be encountered in osm-p2p-db.
+datasets will contain the same cryptographically random 20-digit decimal `id`
+for the scale of data likely to be encountered in osm-p2p-db.
 
 For similar reasons, the `version` property is different in osm-p2p-db than in
 OSM. In OSM, versions are part of an [optimistic locking][11] strategy where

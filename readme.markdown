@@ -46,16 +46,16 @@ Now we can create a few nodes and search with a bounding box query:
 ```
 $ mkdir /tmp/osm-p2p
 $ node db.js create '{"type":"node","lat":64.6,"lon":-147.8}'
-a50aa575ae96971b
+11892499690884077339
 $ node db.js create '{"type":"node","lat":64.3,"lon":-148.2}'
-1b83545b2b06eaad
+1982521011513780909
 $ node db.js create '{"type":"node","lat":64.5,"lon":-147.3}'
-c328c306ddcce256
+14062704270722785878
 $ node db.js query 64.1,64.6 -148,-147
 { type: 'node',
   lat: 64.5,
   lon: -147.3,
-  id: 'c328c306ddcce256',
+  id: '14062704270722785878',
   version: 'e635d07b9fc0a9d048cdd5d9e97a44a19ba3a0b2a51830d1e3e0fadcb80935fc' }
 ```
 
@@ -63,8 +63,8 @@ We can make a `way` document that refers to a list of `node` documents:
 
 ```
 $ node db.js create '{"type":"way","refs":
-["a50aa575ae96971b","1b83545b2b06eaad","c328c306ddcce256"]}'
-cb8b6842a9114b76
+["11892499690884077339","1982521011513780909","14062704270722785878"]}'
+14666931246975765366
 ```
 
 When we query, any `ways` that have one or more nodes within the bounding box
@@ -75,11 +75,11 @@ $ node db.js query 64.1,64.6 -148,-147
 { type: 'node',
   lat: 64.5,
   lon: -147.3,
-  id: 'c328c306ddcce256',
+  id: '14062704270722785878',
   version: 'e635d07b9fc0a9d048cdd5d9e97a44a19ba3a0b2a51830d1e3e0fadcb80935fc' }
 { type: 'way',
-  refs: [ 'a50aa575ae96971b', '1b83545b2b06eaad', 'c328c306ddcce256' ],
-  id: 'cb8b6842a9114b76',
+  refs: [ '11892499690884077339', '1982521011513780909', '14062704270722785878' ],
+  id: '14666931246975765366',
   version: 'f4fc0045e298ca4f9373fab78dee4f0561b4056dcd7975eb92f21d0a05e0eede' }
 ```
 

@@ -24,6 +24,7 @@
     "tape": "^4.3.0"
   },
   "dependencies": {
+    "base-convertor": "^1.1.0",
     "has": "^1.0.1",
     "hyperkv": "^1.4.0",
     "hyperlog-index": "^4.0.0",

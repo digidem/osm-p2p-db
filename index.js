@@ -12,6 +12,7 @@ var xtend = require('xtend')
 var join = require('hyperlog-join')
 var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
+var hex2dec = require('./lib/hex2dec.js')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -111,7 +112,7 @@ DB.prototype.create = function (value, opts, cb) {
   }
   if (!opts) opts = {}
   if (!cb) cb = noop
-  var key = randomBytes(8).toString('hex')
+  var key = hex2dec(randomBytes(8).toString('hex'))
   return this.put(key, value, opts, function (err, node) {
     cb(err, key, node)
   })
