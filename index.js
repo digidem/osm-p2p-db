@@ -185,6 +185,8 @@ DB.prototype.query = function (q, opts, cb) {
 DB.prototype._onpt = function (pt, seen, cb) {
   var self = this
   var link = pt.value.toString('hex')
+  if (has(seen, link)) return cb(null, [])
+  seen[link] = true
   var res = [], pending = 2
   self.log.get(link, function (err, doc) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
@@ -208,7 +210,10 @@ DB.prototype._onpt = function (pt, seen, cb) {
             version: doc.key
           }))
         }
-        if (--pending === 0) cb(null, res)
+        if (doc && doc.value && doc.value.k && doc.value.v
+        && doc.value.v.type === 'way' && Array.isArray(doc.value.v.refs)) {
+          addWayNodes(doc.value.v.refs)
+        } else if (--pending === 0) cb(null, res)
       })
       pending++
       self._links(link, function (err, links) {
@@ -217,6 +222,26 @@ DB.prototype._onpt = function (pt, seen, cb) {
     })
     if (--pending === 0) cb(null, res)
   })
+
+  function addWayNodes (refs) {
+    refs.forEach(function (ref) {
+      if (has(seen, ref)) return
+      seen[ref] = true
+      pending++
+      self.get(ref, function (err, docs) {
+        Object.keys(docs || {}).forEach(function (key) {
+          if (has(seen, key)) return
+          seen[key] = true
+          res.push(xtend(docs[key], {
+            id: ref,
+            version: key
+          }))
+        })
+        if (--pending === 0) cb(null, res)
+      })
+    })
+    if (--pending === 0) cb(null, res)
+  }
 }
 
 DB.prototype.queryStream = function (q, opts) {
