@@ -86,8 +86,12 @@ test('delete a node from a way', function (t) {
     })
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
+      { type: 'node', lat: 64.5, lon: -147.3,
+        id: names.A, version: versions.A },
       { type: 'node', lat: 63.9, lon: -147.6,
         id: names.B, version: versions.B },
+      { type: 'node', lat: 64.2, lon: -146.5,
+        id: names.C, version: versions.C },
       { type: 'way', refs: [ names.A, names.B, names.C ],
         id: names.E, version: versions.F }
     ].sort(idcmp)

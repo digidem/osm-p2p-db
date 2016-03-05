@@ -88,6 +88,10 @@ test('fork', function (t) {
         id: names.A, version: versions.A[0] },
       { type: 'node', lat: 63.9, lon: -147.6,
         id: names.B, version: versions.B[0] },
+      { type: 'node', lat: 62.5, lon: -146.2,
+        id: names.C, version: versions.C[1] },
+      { type: 'node', lat: 62.4, lon: -146.3,
+        id: names.C, version: versions.C[2] },
       { type: 'way', refs: [ names.A, names.B, names.C ],
         id: names.D, version: versions.D[0] }
     ].sort(idcmp)
@@ -101,6 +105,8 @@ test('fork', function (t) {
     })
     var q1 = [[62,64],[-149.5,-146]]
     var ex1 = [
+      { type: 'node', lat: 64.5, lon: -147.3,
+        id: names.A, version: versions.A[0] },
       { type: 'node', lat: 63.9, lon: -147.6,
         id: names.B, version: versions.B[0] },
       { type: 'node', lat: 62.5, lon: -146.2,
