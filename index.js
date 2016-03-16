@@ -1,7 +1,6 @@
 var hyperkv = require('hyperkv')
 var hyperkdb = require('hyperlog-kdb-index')
 var kdbtree = require('kdb-tree-store')
-var hindex = require('hyperlog-index')
 var sub = require('subleveldown')
 var randomBytes = require('randombytes')
 var has = require('has')
