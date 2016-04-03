@@ -12,6 +12,7 @@ var join = require('hyperlog-join')
 var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
 var hex2dec = require('./lib/hex2dec.js')
+var lock = require('mutexify')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -26,6 +27,7 @@ function DB (opts) {
     db: sub(self.db, 'kv')
   })
   self.kv.on('error', function (err) { self.emit('error', err) })
+  self.lock = lock()
   self.kdb = hyperkdb({
     log: self.log,
     store: opts.store,
@@ -105,6 +107,7 @@ DB.prototype.ready = function (cb) {
 }
 
 DB.prototype.create = function (value, opts, cb) {
+  var self = this
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
@@ -112,13 +115,24 @@ DB.prototype.create = function (value, opts, cb) {
   if (!opts) opts = {}
   if (!cb) cb = noop
   var key = hex2dec(randomBytes(8).toString('hex'))
-  return this.put(key, value, opts, function (err, node) {
+  self.put(key, value, opts, function (err, node) {
     cb(err, key, node)
   })
 }
 
 DB.prototype.put = function (key, value, opts, cb) {
-  this.kv.put(key, value, opts, cb)
+  var self = this
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+  if (!cb) cb = noop
+  self.lock(function (release) {
+    self.kv.put(key, value, opts, function (err, node) {
+      release(cb, err, node)
+    })
+  })
 }
 
 DB.prototype.del = function (key, opts, cb) {
@@ -170,7 +184,7 @@ DB.prototype.batch = function (rows, opts, cb) {
   cb = once(cb || noop)
 
   var batch = []
-  self.kv.lock(function (release) {
+  self.lock(function (release) {
     var pending = 1 + rows.length
     rows.forEach(function (row) {
       if (row.type === 'put') {
