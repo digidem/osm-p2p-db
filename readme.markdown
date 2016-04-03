@@ -143,6 +143,25 @@ set `opts.links` to an array of only the single key you want to update.
 
 [4]: https://npmjs.com/package/hyperkv
 
+## osm.del(id, opts={}, cb)
+
+Delete a document at `id`.
+
+The options `opts` are passed to the underlying [hyperkv][4] instance.
+
+`cb(err, node)` fires with the underlying `node` in the hyperlog.
+
+## osm.batch(rows, opts={}, cb)
+
+Atomically insert an array of documents `rows`.
+
+Each `row` in `rows` should have:
+
+* `row.type` - `'put'` or `'del'`
+* `row.key` or `row.id` - the id of the document
+* `row.links` - array of links to ancestor keys
+* `row.value` - for puts, the value to store
+
 ## osm.get(id, opts={}, cb)
 
 Get a document as `cb(err, docs)` by its OSM `id`.

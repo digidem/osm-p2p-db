@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "base-convertor": "^1.1.0",
+    "defined": "^1.0.0",
     "has": "^1.0.1",
     "hyperkv": "^1.6.0",
     "hyperlog-join": "^1.3.1",
