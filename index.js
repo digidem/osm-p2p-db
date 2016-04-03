@@ -13,6 +13,7 @@ var inherits = require('inherits')
 var EventEmitter = require('events').EventEmitter
 var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
+var defined = require('defined')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -187,11 +188,12 @@ DB.prototype.batch = function (rows, opts, cb) {
   self.lock(function (release) {
     var pending = 1 + rows.length
     rows.forEach(function (row) {
+      var key = defined(row.key, row.id)
       if (row.type === 'put') {
         batch.push(row)
         if (--pending === 0) done()
       } else if (row.type === 'del') {
-        self._del(row.key, xtend(opts, row), function (err, xrows) {
+        self._del(key, xtend(opts, row), function (err, xrows) {
           if (err) return release(cb, err)
           batch.push.apply(batch, xrows)
           if (--pending === 0) done()
