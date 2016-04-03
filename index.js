@@ -129,21 +129,71 @@ DB.prototype.del = function (key, opts, cb) {
   }
   if (!opts) opts = {}
   cb = once(cb || noop)
+  self._del(key, opts, function (err, rows) {
+    if (err) return cb(err)
+    self.batch(rows, opts, function (err, nodes) {
+      if (err) cb(err)
+      else cb(null, nodes[0])
+    })
+  })
+}
+
+DB.prototype._del = function (key, opts, cb) {
+  var self = this
   self.kv.get(key, function (err, values) {
+    if (err) return cb(err)
     var pending = 1
-    var doc = { d: key }
-    Object.keys(values).forEach(function (ln) {
+    var fields = {}
+    var links = opts.keys || Object.keys(values)
+    links.forEach(function (ln) {
       var v = values[ln] || {}
       if (v.lat !== undefined && v.lon !== undefined) {
-        if (!doc.points) doc.points = []
-        doc.points.push({ lat: v.lat, lon: v.lon })
+        if (!fields.points) fields.points = []
+        fields.points.push({ lat: v.lat, lon: v.lon })
       }
       if (Array.isArray(v.refs)) {
-        if (!doc.refs) doc.refs = []
-        doc.refs.push.apply(doc.refs, v.refs)
+        if (!fields.refs) fields.refs = []
+        fields.refs.push.apply(fields.refs, v.refs)
       }
     })
-    self.log.add(Object.keys(values), doc, cb)
+    cb(null, [ { type: 'del', key: key, links: links, fields: fields } ])
+  })
+}
+
+DB.prototype.batch = function (rows, opts, cb) {
+  var self = this
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+  cb = once(cb || noop)
+
+  var batch = []
+  self.kv.lock(function (release) {
+    var pending = 1 + rows.length
+    rows.forEach(function (row) {
+      if (row.type === 'put') {
+        batch.push(row)
+        if (--pending === 0) done()
+      } else if (row.type === 'del') {
+        self._del(row.key, xtend(opts, row), function (err, xrows) {
+          if (err) return release(cb, err)
+          batch.push.apply(batch, xrows)
+          if (--pending === 0) done()
+        })
+      } else {
+        var err = new Error('unexpected row type: ' + row.type)
+        process.nextTick(function () { release(cb, err) })
+      }
+    })
+    if (--pending === 0) done()
+
+    function done () {
+      self.kv.batch(rows, opts, function (err, nodes) {
+        release(cb, err, nodes)
+      })
+    }
   })
 }
 
@@ -288,6 +338,3 @@ DB.prototype.getChanges = function (key, opts, cb) {
 }
 
 function noop () {}
-function notFound (err) {
-  return /^notfound/i.test(err.message) || err.notFound
-}
