@@ -66,8 +66,8 @@ test('reject id', function (t) {
     })
   }
   function sync () {
-    var r0 = osm0.log.replicate()
-    var r1 = osm1.log.replicate()
+    var r0 = osm0.replicate()
+    var r1 = osm1.replicate()
     r0.pipe(r1).pipe(r0)
     r0.on('error', function (err) {
       t.ok(err, 'expected replication error')

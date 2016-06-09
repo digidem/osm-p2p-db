@@ -1,3 +1,4 @@
+var duplexify = require('duplexify')
 var hyperkv = require('hyperkv')
 var hyperkdb = require('hyperlog-kdb-index')
 var kdbtree = require('kdb-tree-store')
@@ -351,6 +352,16 @@ DB.prototype.getChanges = function (key, opts, cb) {
     if (cb) cb(null, rows)
     next()
   }
+}
+
+DB.prototype.replicate = function () {
+  var self = this
+  var d = duplexify()
+  self.get('_id', function (err, values) {
+    if (err) return d.emit('error', err)
+    //var log = self.log.replicate()
+  })
+  return d
 }
 
 function noop () {}
