@@ -80,8 +80,8 @@ test('transfer id from set to null', function (t) {
   }
 
   function replicate () {
-    var r0 = osm0.log.replicate()
-    var r1 = osm1.log.replicate()
+    var r0 = osm0.replicate()
+    var r1 = osm1.replicate()
     r0.pipe(r1).pipe(r0)
     r0.once('end', function () {
       check()
