@@ -12,7 +12,7 @@ var storefile1 = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('reject id', function (t) {
-  t.plan(17)
+  t.plan(18)
   var osm0 = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -61,17 +61,22 @@ test('reject id', function (t) {
     })
     osm1.put('_id', 'log1', function (err, node) {
       t.error(err)
-      versions.log0 = [node.key]
+      versions.log1 = [node.key]
       if (--pending === 0) sync()
     })
   }
   function sync () {
     var r0 = osm0.replicate()
     var r1 = osm1.replicate()
+    var pending = 2
     r0.pipe(r1).pipe(r0)
     r0.on('error', function (err) {
       t.ok(err, 'expected replication error')
-      check()
+      if (--pending === 0) check()
+    })
+    r1.on('error', function (err) {
+      t.ok(err, 'expected replication error')
+      if (--pending === 0) check()
     })
   }
 
@@ -109,7 +114,7 @@ test('reject id', function (t) {
     osm1.get('_id', function (err, values) {
       t.error(err)
       var expected = {}
-      expected[versions.log0] = 'log0'
+      expected[versions.log1] = 'log1'
       t.deepEqual(values, expected)
     })
   }

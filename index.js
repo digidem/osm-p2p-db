@@ -15,6 +15,9 @@ var EventEmitter = require('events').EventEmitter
 var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
 var defined = require('defined')
+var multiplex = require('multiplex')
+var to = require('to2')
+var split = require('split2')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -354,14 +357,62 @@ DB.prototype.getChanges = function (key, opts, cb) {
   }
 }
 
-DB.prototype.replicate = function () {
+DB.prototype.replicate = function (opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+  var precb = cb
+  cb = once(cb || noop)
+
   var self = this
-  var d = duplexify()
-  self.get('_id', function (err, values) {
+  var plex = multiplex()
+  var info = plex.createSharedStream('info')
+  var log = plex.createSharedStream('log')
+  if (precb) plex.once('error', cb)
+
+  var open = 2
+  info.once('end', onend)
+  log.once('end', onend)
+  plex.once('end', function () { cb(null) })
+  function onend () { if (--open === 0) plex.end() }
+
+  self.get('_id', function (err, ids) {
     if (err) return d.emit('error', err)
-    //var log = self.log.replicate()
+    info.pipe(split(parse)).pipe(to.obj(function (row, enc, next) {
+      if (row.type === 'id') {
+        var ownIds = values(ids)
+        if (ownIds.length > 0 && intersect(ownIds, row.values).length === 0) {
+          plex.emit('error', new Error("ID doesn't match"))
+        } else {
+          log.pipe(self.log.replicate()).pipe(log)
+          info.end()
+        }
+      }
+      next()
+    }))
+    info.write(JSON.stringify({ type: 'id', values: values(ids) }) + '\n')
   })
-  return d
+  return plex
+
+  function parse (line) {
+    try { var obj = JSON.parse(line) }
+    catch (err) {}
+    return obj
+  }
+  function values (obj) {
+    return Object.keys(obj).map(function (key) { return obj[key] })
+  }
+  function intersect (xs, ys) {
+    var res = []
+    for (var i = 0; i < xs.length; i++) {
+      for (var j = 0; j < ys.length; j++) {
+        if (xs[i] === ys[i]) res.push(xs[i])
+      }
+    }
+    return res
+  }
 }
 
 function noop () {}
