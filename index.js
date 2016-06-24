@@ -14,6 +14,7 @@ var EventEmitter = require('events').EventEmitter
 var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
 var defined = require('defined')
+var collect = require('collect-stream')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -336,19 +337,12 @@ DB.prototype.getChanges = function (key, opts, cb) {
     opts = {}
   }
   var r = this.changeset.list(key, opts)
-  var rows = cb ? [] : null
-  if (cb) cb = once(cb)
-  var stream = r.pipe(through.obj(write, end))
-  if (cb) r.once('error', cb)
+  var stream = r.pipe(through.obj(write))
+  if (cb) collect(stream, cb)
   return readonly(stream)
 
   function write (row, enc, next) {
-    if (rows) rows.push(row.key)
     this.push(row.key)
-    next()
-  }
-  function end (next) {
-    if (cb) cb(null, rows)
     next()
   }
 }

@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "base-convertor": "^1.1.0",
+    "collect-stream": "^1.1.1",
     "defined": "^1.0.0",
     "has": "^1.0.1",
     "hyperkv": "^1.6.0",
