@@ -6,6 +6,7 @@ var randomBytes = require('randombytes')
 var has = require('has')
 var once = require('once')
 var through = require('through2')
+var to = require('to2')
 var readonly = require('read-only-stream')
 var xtend = require('xtend')
 var join = require('hyperlog-join')
@@ -14,7 +15,6 @@ var EventEmitter = require('events').EventEmitter
 var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
 var defined = require('defined')
-var collect = require('collect-stream')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -338,7 +338,7 @@ DB.prototype.getChanges = function (key, opts, cb) {
   }
   var r = this.changeset.list(key, opts)
   var stream = r.pipe(through.obj(write))
-  if (cb) collect(stream, cb)
+  if (cb) collectObj(stream, cb)
   return readonly(stream)
 
   function write (row, enc, next) {
@@ -348,3 +348,15 @@ DB.prototype.getChanges = function (key, opts, cb) {
 }
 
 function noop () {}
+
+function collectObj (stream, cb) {
+  cb = once(cb)
+  var rows = []
+  stream.on('error', cb)
+  stream.pipe(to.obj(write, end))
+  function write (x, enc, next) {
+    rows.push(x)
+    next()
+  }
+  function end () { cb(null, rows) }
+}
