@@ -207,7 +207,7 @@ DB.prototype.batch = function (rows, opts, cb) {
     if (--pending === 0) done()
 
     function done () {
-      self.kv.batch(rows, opts, function (err, nodes) {
+      self.kv.batch(batch, opts, function (err, nodes) {
         release(cb, err, nodes)
       })
     }

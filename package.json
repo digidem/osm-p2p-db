@@ -47,10 +47,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/substack/osm-p2p-db.git"
+    "url": "git+https://github.com/digidem/osm-p2p-db.git"
   },
   "bugs": {
-    "url": "https://github.com/substack/osm-p2p-db/issues"
+    "url": "https://github.com/digidem/osm-p2p-db/issues"
   },
-  "homepage": "https://github.com/substack/osm-p2p-db#readme"
+  "homepage": "https://github.com/digidem/osm-p2p-db#readme"
 }
