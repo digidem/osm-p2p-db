@@ -29,7 +29,7 @@
     "has": "^1.0.1",
     "hyperkv": "^1.6.0",
     "hyperlog-join": "^1.3.1",
-    "hyperlog-kdb-index": "^3.0.1",
+    "hyperlog-kdb-index": "^4.0.0",
     "inherits": "^2.0.1",
     "kdb-tree-store": "^3.0.2",
     "mutexify": "^1.1.0",

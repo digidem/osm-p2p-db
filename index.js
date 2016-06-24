@@ -36,14 +36,14 @@ function DB (opts) {
     db: sub(self.db, 'kdb'),
     kdbtree: kdbtree,
     types: [ 'float', 'float' ],
-    map: function (row) {
+    map: function (row, next) {
       if (!row.value) return null
       var v = row.value.v, d = row.value.d
       if (v && v.lat !== undefined && v.lon !== undefined) {
-        return { type: 'put', point: ptf(v) }
+        next(null, { type: 'put', point: ptf(v) })
       } else if (d && Array.isArray(row.value.points)) {
-        return { type: 'del', points: row.value.points.map(ptf) }
-      }
+        next(null, { type: 'del', points: row.value.points.map(ptf) })
+      } else next()
       function ptf (x) { return [ x.lat, x.lon ] }
     }
   })
