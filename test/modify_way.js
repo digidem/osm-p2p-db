@@ -11,7 +11,7 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('modify way', function (t) {
-  t.plan(8)
+  t.plan(14)
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -23,7 +23,9 @@ test('modify way', function (t) {
     { id: 'C', type: 'node', lat: 64.2, lon: -146.5 },
     { id: 'D', type: 'way', refs: [ 'A', 'B', 'C' ] },
     { id: 'E', type: 'node', lat: 60.6, lon: -141.2 },
-    { id: 'D', type: 'way', refs: [ 'A', 'E' ] }
+    { id: 'D', type: 'way', refs: [ 'A', 'E' ], links: ['D'] },
+    { type: 'del', id: 'B', links: ['B'] },
+    { type: 'del', id: 'C', links: ['C'] }
   ]
   var names = {}
   var versions = {}
@@ -33,24 +35,65 @@ test('modify way', function (t) {
     var doc = docs.shift()
     var key = doc.id
     delete doc.id
-    osm.put(key, doc, function (err, node) {
-      t.ifError(err)
-      versions[key] = node.key
-      next()
-    })
+    var opts = {
+      links: (doc.links || []).map(function (link) {
+        return versions[link]
+      })
+    }
+    delete doc.links
+    if (doc.type === 'del') {
+      osm.del(key, opts, function (err) {
+        t.ifError(err)
+        next()
+      })
+    } else {
+      osm.put(key, doc, opts, function (err, node) {
+        t.ifError(err)
+        versions[key] = node.key
+        next()
+      })
+    }
   })()
 
   function ready () {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[59,61],[-144,-140]]
     var ex0 = [
       { type: 'node', lat: 64.5, lon: -147.3,
         id: 'A', version: versions.A },
       { type: 'node', lat: 60.6, lon: -141.2,
         id: 'E', version: versions.E },
+      { type: 'way', refs: ['A','E'],
+        id: 'D', version: versions.D }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
-      t.deepEqual(res.sort(idcmp), ex0, '')
+      t.deepEqual(res.sort(idcmp), ex0, 'query results: 0')
+    })
+    var q1 = [[64,65],[-148,-147]]
+    var ex1 = [
+      { type: 'node', lat: 64.5, lon: -147.3,
+        id: 'A', version: versions.A },
+      { type: 'node', lat: 60.6, lon: -141.2,
+        id: 'E', version: versions.E },
+      { type: 'way', refs: ['A','E'],
+        id: 'D', version: versions.D }
+    ].sort(idcmp)
+    osm.query(q1, function (err, res) {
+      t.ifError(err)
+      t.deepEqual(res.sort(idcmp), ex1, 'query results: 1')
+    })
+    var q2 = [[60,66],[-150,-140]]
+    var ex2 = [
+      { type: 'node', lat: 64.5, lon: -147.3,
+        id: 'A', version: versions.A },
+      { type: 'node', lat: 60.6, lon: -141.2,
+        id: 'E', version: versions.E },
+      { type: 'way', refs: ['A','E'],
+        id: 'D', version: versions.D }
+    ].sort(idcmp)
+    osm.query(q2, function (err, res) {
+      t.ifError(err)
+      t.deepEqual(res.sort(idcmp), ex2, 'query results: 1')
     })
   }
 })
