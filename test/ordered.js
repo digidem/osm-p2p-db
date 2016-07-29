@@ -11,7 +11,7 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('ordered types', function (t) {
-  t.plan(4)
+  t.plan(7)
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -48,6 +48,11 @@ test('ordered types', function (t) {
     ].sort(idcmp)
 
     osm.query(q0, { order: 'type' }, function (err, res) {
+      t.error(err)
+      t.deepEqual(res.map(type), ext0, 'types')
+      t.deepEqual(res.sort(idcmp), ex0, 'results')
+    })
+    collect(osm.queryStream(q0, { order: 'type' }), function (err, res) {
       t.error(err)
       t.deepEqual(res.map(type), ext0, 'types')
       t.deepEqual(res.sort(idcmp), ex0, 'results')
