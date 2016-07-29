@@ -225,6 +225,10 @@ a bounding box.
 Each object in the stream is a document augmented with an `id` property and a
 `version` property that is the hash key from the underlying hyperlog.
 
+Optionally:
+
+* `opts.order` - set to `'type'` to order by type: node, way, relation
+
 ### var rstream = osm.getChanges(id, cb)
 
 Get the list of document ids in a changeset by a changeset `id`.

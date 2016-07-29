@@ -323,8 +323,11 @@ DB.prototype._onpt = function (pt, seen, cb) {
 
 DB.prototype.queryStream = function (q, opts) {
   var self = this
-  var stream = through.obj(write)
-  var seen = {}
+  if (!opts) opts = {}
+  var stream = opts.order === 'type'
+    ? through.obj(writeType, endType)
+    : through.obj(write)
+  var seen = {}, queue = [], prev
   self.ready(function () {
     var r = self.kdb.queryStream(q, opts)
     r.on('error', stream.emit.bind(stream, 'error'))
@@ -336,9 +339,44 @@ DB.prototype.queryStream = function (q, opts) {
     next = once(next)
     var tr = this
     self._onpt(row, seen, function (err, res) {
-      if (res) res.forEach(function (r) { tr.push(r) })
+      if (res) res.forEach(function (r) {
+        tr.push(r)
+      })
       next()
     })
+  }
+  function writeType (row, enc, next) {
+    next = once(next)
+    var tr = this
+    self._onpt(row, seen, function (err, res) {
+      if (res) res.forEach(function (r) {
+        if (!prev || typeOrder[prev.type] >= typeOrder[r.type]) {
+          while (queue.length > 0) {
+            if (typeOrder[queue[0].type] <= typeOrder[r.type]) {
+              tr.push(queue.shift())
+            } else break
+          }
+          tr.push(r)
+          prev = r
+        } else {
+          insert(r)
+        }
+      })
+      next()
+    })
+  }
+  function endType (next) {
+    var tr = this
+    queue.forEach(function (q) { tr.push(q) })
+    next()
+  }
+  function insert (r) {
+    for (var i = 0; i < queue.length; i++ ) {
+      if (typeOrder[r.type] >= typeOrder[queue[i].type]) {
+        return queue.splice(i,0,r)
+      }
+    }
+    queue.push(r)
   }
 }
 
