@@ -231,21 +231,32 @@ DB.prototype.query = function (q, opts, cb) {
   }
   if (!opts) opts = {}
   cb = once(cb || noop)
+  var res = []
   self.ready(function () {
     self.kdb.query(q, opts, onquery)
   })
   function onquery (err, pts) {
     if (err) return cb(err)
-    var pending = 1, res = [], seen = {}
+    var pending = 1, seen = {}
     pts.forEach(function (pt) {
       pending++
       self._onpt(pt, seen, function (err, r) {
-        if (r) res.push.apply(res, r)
-        if (--pending === 0) cb(null, res)
+        if (r) res = res.concat(r)
+        if (--pending === 0) done()
       })
     })
-    if (--pending === 0) cb(null, res)
+    if (--pending === 0) done()
   }
+  function done () {
+    if (opts.order === 'type') {
+      res.sort(cmpType)
+    }
+    cb(null, res)
+  }
+}
+var typeOrder = { node: 0, way: 1, relation: 2 }
+function cmpType (a, b) {
+  return typeOrder[a.type] - typeOrder[b.type]
 }
 
 DB.prototype._onpt = function (pt, seen, cb) {

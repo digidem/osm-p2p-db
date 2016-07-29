@@ -49,8 +49,8 @@ test('ordered types', function (t) {
 
     osm.query(q0, { order: 'type' }, function (err, res) {
       t.error(err)
-      t.deepEqual(res.sort(idcmp), ex0, 'results')
       t.deepEqual(res.map(type), ext0, 'types')
+      t.deepEqual(res.sort(idcmp), ex0, 'results')
     })
   })
 })
@@ -58,10 +58,8 @@ test('ordered types', function (t) {
 function type (x) { return x.type }
 function idcmp (a, b) {
   return a.type === b.type
-    ? cmpt(a.type, b.type)
-    : (a.id < b.id ? -1 : 1)
+    ? (a.id < b.id ? -1 : 1)
+    : cmpt(a.type, b.type)
 }
-var types = ['node','way','relation']
-function cmpt (a, b) {
-  return types.indexOf(a) - types.indexOf(b)
-}
+var types = { node: 0, way: 1, relation: 2 }
+function cmpt (a, b) { return types[a] - types[b] }
