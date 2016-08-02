@@ -1,0 +1,41 @@
+[
+  {
+    "key": "n1",
+    "value": {
+      "type": "node",
+      "lat": 64.8,
+      "lon": -148.2
+    }
+  },
+  {
+    "key": "w1",
+    "value": {
+      "type": "way",
+      "refs": [ "n1" ]
+    }
+  },
+  {
+    "key": "n1",
+    "value": {
+      "type": "node",
+      "lat": 64.9,
+      "lon": -148.1
+    }
+  },
+  {
+    "key": "n1",
+    "value": {
+      "type": "node",
+      "lat": 65.1,
+      "lon": -147.8
+    }
+  },
+  {
+    "key": "n1",
+    "value": {
+      "type": "node",
+      "lat": 64.9,
+      "lon": -147.9
+    }
+  }
+]
