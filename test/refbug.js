@@ -16,17 +16,21 @@ test('refbug', function (t) {
     db: memdb(),
     store: fdstore(4096, storefile)
   })
-  var nodes = []
-  ;(function next (links) {
+  var nodes = [], docs = {}
+  ;(function next () {
     if (data.length === 0) return ready()
     var row = data.shift()
+    var prev = docs[row.key]
+    var p = prev && prev[prev.length-1]
+    var links = p ? [p] : []
     osm.put(row.key, row.value, { links: links }, function (err, node) {
       t.error(err)
       nodes.push(node)
-      if (row.value.type === 'node') next([node.key])
-      else next([])
+      if (!docs[row.key]) docs[row.key] = []
+      docs[row.key].push(node.key)
+      next()
     })
-  })([])
+  })()
 
   function ready () {
     var bbox = [[64,66],[-149,-146]]
