@@ -23,13 +23,20 @@ test('refbug', function (t) {
     var prev = docs[row.key]
     var p = prev && prev[prev.length-1]
     var links = p ? [p] : []
-    osm.put(row.key, row.value, { links: links }, function (err, node) {
-      t.error(err)
-      nodes.push(node)
-      if (!docs[row.key]) docs[row.key] = []
-      docs[row.key].push(node.key)
-      next()
-    })
+    if (row.type === 'del') {
+      osm.del(row.key, { links: links }, function (err, node) {
+        t.error(err)
+        next()
+      })
+    } else {
+      osm.put(row.key, row.value, { links: links }, function (err, node) {
+        t.error(err)
+        nodes.push(node)
+        if (!docs[row.key]) docs[row.key] = []
+        docs[row.key].push(node.key)
+        next()
+      })
+    }
   })()
 
   function ready () {
@@ -44,13 +51,13 @@ test('refbug', function (t) {
         id: 'n1',
         lat: 64.9,
         lon: -147.9,
-        version: nodes[nodes.length-1].key
+        version: nodes[nodes.length-2].key
       })
       t.deepEqual(way, {
         type: 'way',
         id: 'w1',
         refs: [ 'n1' ],
-        version: nodes[1].key
+        version: nodes[nodes.length-1].key
       })
     })
   }

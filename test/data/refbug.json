@@ -8,11 +8,23 @@
     }
   },
   {
+    "key": "n2",
+    "value": {
+      "type": "node",
+      "lat": 64.6,
+      "lon": -147.8
+    }
+  },
+  {
     "key": "w1",
     "value": {
       "type": "way",
-      "refs": [ "n1" ]
+      "refs": [ "n1", "n2" ]
     }
+  },
+  {
+    "type": "del",
+    "key": "n2"
   },
   {
     "key": "n1",
@@ -36,6 +48,13 @@
       "type": "node",
       "lat": 64.9,
       "lon": -147.9
+    }
+  },
+  {
+    "key": "w1",
+    "value": {
+      "type": "way",
+      "refs": [ "n1" ]
     }
   }
 ]
