@@ -260,6 +260,7 @@ function cmpType (a, b) {
 }
 
 DB.prototype._onpt = function (pt, seen, cb) {
+  cb = once(cb || noop)
   var self = this
   var link = pt.value.toString('hex')
   if (has(seen, link)) return cb(null, [])
@@ -282,10 +283,17 @@ DB.prototype._onpt = function (pt, seen, cb) {
       pending++
       self.log.get(link, function (err, doc) {
         if (doc && doc.value && doc.value.k && doc.value.v) {
-          res.push(xtend(doc.value.v, {
-            id: doc.value.k,
-            version: doc.key
-          }))
+          pending++
+          self.get(doc.value.k, function (err, xdocs) {
+            if (err) return cb(err)
+            Object.keys(xdocs).forEach(function (key) {
+              res.push(xtend(xdocs[key], {
+                id: doc.value.k,
+                version: key
+              }))
+            })
+            if (--pending === 0) cb(null, res)
+          })
         }
         if (doc && doc.value && doc.value.k && doc.value.v
         && doc.value.v.type === 'way' && Array.isArray(doc.value.v.refs)) {
