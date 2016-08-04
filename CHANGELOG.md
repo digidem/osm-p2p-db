@@ -2,10 +2,6 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
-### Added
-### Changed
+## [3.9.2] - 2016-08-02
 ### Fixed
-### Removed
-
-[Unreleased]: https://github.com/digidem/osm-p2p-db/compare/3.6.1...HEAD
+- always return the most current versions of documents in bounding box queries
