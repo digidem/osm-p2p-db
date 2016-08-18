@@ -301,13 +301,13 @@ DB.prototype._onpt = function (pt, seen, cb) {
   })
 
   function addDoc (id, key, doc) {
-    if (true || !added[id]) {
+    if (!added.hasOwnProperty(key)) {
       res.push(xtend(doc, {
         id: id,
         version: key
       }))
+      added[key] = true
     }
-    added[id] = true
     if (doc && Array.isArray(doc.refs || doc.nodes)) {
       addWayNodes(doc.refs || doc.nodes)
     }
@@ -326,7 +326,6 @@ DB.prototype._onpt = function (pt, seen, cb) {
         if (--pending === 0) cb(null, res)
       })
     })
-    if (--pending === 0) cb(null, res)
   }
 }
 
