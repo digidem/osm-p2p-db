@@ -265,13 +265,10 @@ DB.prototype._onpt = function (pt, seen, cb) {
   var link = pt.value.toString('hex')
   if (has(seen, link)) return cb(null, [])
   seen[link] = true
-  var res = [], pending = 2
+  var res = [], added = {}, pending = 2
   self.log.get(link, function (err, doc) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
-      res.push(xtend(doc.value.v, {
-        id: doc.value.k,
-        version: doc.key
-      }))
+      addDoc(doc.value.k, link, doc.value.v)
     }
     if (--pending === 0) cb(null, res)
   })
@@ -287,18 +284,13 @@ DB.prototype._onpt = function (pt, seen, cb) {
           self.get(doc.value.k, function (err, xdocs) {
             if (err) return cb(err)
             Object.keys(xdocs).forEach(function (key) {
-              res.push(xtend(xdocs[key], {
-                id: doc.value.k,
-                version: key
-              }))
+              addDoc(doc.value.k, key, xdocs[key])
             })
             if (--pending === 0) cb(null, res)
           })
         }
-        if (doc && doc.value && doc.value.k && doc.value.v
-        && doc.value.v.type === 'way' && Array.isArray(doc.value.v.refs)) {
-          addWayNodes(doc.value.v.refs)
-        } else if (--pending === 0) cb(null, res)
+        addDoc(doc.value.k, link, doc.value.v)
+        if (--pending === 0) cb(null, res)
       })
       pending++
       self._links(link, function (err, links) {
@@ -308,6 +300,18 @@ DB.prototype._onpt = function (pt, seen, cb) {
     if (--pending === 0) cb(null, res)
   })
 
+  function addDoc (id, key, doc) {
+    if (true || !added[id]) {
+      res.push(xtend(doc, {
+        id: id,
+        version: key
+      }))
+    }
+    added[id] = true
+    if (doc && Array.isArray(doc.refs || doc.nodes)) {
+      addWayNodes(doc.refs || doc.nodes)
+    }
+  }
   function addWayNodes (refs) {
     refs.forEach(function (ref) {
       if (has(seen, ref)) return
@@ -317,10 +321,7 @@ DB.prototype._onpt = function (pt, seen, cb) {
         Object.keys(docs || {}).forEach(function (key) {
           if (has(seen, key)) return
           seen[key] = true
-          res.push(xtend(docs[key], {
-            id: ref,
-            version: key
-          }))
+          addDoc(ref, key, docs[key])
         })
         if (--pending === 0) cb(null, res)
       })
