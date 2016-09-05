@@ -24,10 +24,10 @@ function DB (opts) {
   if (!(self instanceof DB)) return new DB(opts)
   self.log = opts.log
   self.db = opts.db
-  self.kv = hyperkv({
+  self.kv = defined(opts.kv, hyperkv({
     log: self.log,
     db: sub(self.db, 'kv')
-  })
+  }))
   self.kv.on('error', function (err) { self.emit('error', err) })
   self.lock = lock()
   self.kdb = hyperkdb({

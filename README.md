@@ -129,6 +129,9 @@ Create a new `osm` instance with:
 * `opts.db` - a [levelup][2] instance to store index data
 * `opts.store` - an [abstract-chunk-store][3] instance
 
+You may optionally pass in a [hyperkv][4] instance as `opts.kv`, but otherwise
+one will be created from the `opts.log` and `opts.db`.
+
 You may safely delete the index database whenever you like. The index data is
 automatically regenerated. This is very useful if there are breaking changes to
 the index code or if the data becomes corrupted. The hyperlog contains the
