@@ -18,7 +18,7 @@
   - [osm.get(id, opts={}, cb)](#osmgetid-opts-cb)
   - [osm.query(q, opts, cb)](#osmqueryq-opts-cb)
   - [var rstream = osm.queryStream(q, opts)](#var-rstream--osmquerystreamq-opts)
-  - [var rstream = osm.getChanges(id, cb)](#var-rstream--osmgetchangesid-cb)
+  - [var rstream = osm.getChanges(changeset, cb)](#var-rstream--osmgetchangesid-cb)
   - [osm.on('error', function (err) {})](#osmonerror-function-err-)
   - [osm.kv](#osmkv)
   - [osm.log](#osmlog)
@@ -114,6 +114,14 @@ $ node db.js query 64.1,64.6 -148,-147
   id: '14666931246975765366',
   version: 'f4fc0045e298ca4f9373fab78dee4f0561b4056dcd7975eb92f21d0a05e0eede' }
 ```
+
+## Terminology
+
+- *document*: a map element, such a a `node` or `way`.
+- *document id*, *osm id*: an identifier of a document at its latest known
+  version.
+- *version*, *version id*: an identifier of a document *at a specific point in
+  time*.
 
 ## API
 
@@ -232,12 +240,12 @@ Optionally:
 
 * `opts.order` - set to `'type'` to order by type: node, way, relation
 
-### var rstream = osm.getChanges(id, cb)
+### var rstream = osm.getChanges(changeset, cb)
 
-Get the list of document ids in a changeset by a changeset `id`.
+Get the list of document ids in a changeset by a changeset id `changeset`.
 
-The document ids are available as `cb(err, ids)` and as the objects in the
-readable object stream `rstream`.
+The document version ids are available as `cb(err, versions)` and as the objects
+in the readable object stream `rstream`.
 
 ### osm.on('error', function (err) {})
 
@@ -290,9 +298,17 @@ use `osm.put(id, doc, cb)` to store the desired document value.
 
 ## Contribute
 
-If you would like to support our work, or if you have ideas about how to use and adapt osm-p2p for your own project, then please dive in. Open [an issue](https://github.com/digidem/osm-p2p-db/issues) with a bug report or feature request, or send us a [pull request](https://github.com/digidem/osm-p2p-db/pulls) with a bug-fix or new feature.
+If you would like to support our work, or if you have ideas about how to use and
+adapt osm-p2p for your own project, then please dive in. Open [an
+issue](https://github.com/digidem/osm-p2p-db/issues) with a bug report or
+feature request, or send us a [pull
+request](https://github.com/digidem/osm-p2p-db/pulls) with a bug-fix or new
+feature.
 
-We need help right now adding tests and fixing edge-cases with [osm-p2p-server](https://github.com/digidem/osm-p2p-server) and increasing compatibility with other OSM tools such as [JOSM](https://josm.openstreetmap.de/).
+We need help right now adding tests and fixing edge-cases with
+[osm-p2p-server](https://github.com/digidem/osm-p2p-server) and increasing
+compatibility with other OSM tools such as
+[JOSM](https://josm.openstreetmap.de/).
 
 ## License
 
