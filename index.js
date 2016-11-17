@@ -215,6 +215,12 @@ DB.prototype.batch = function (rows, opts, cb) {
 }
 
 DB.prototype.get = function (key, opts, cb) {
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+
   this.kv.get(key, opts, function (err, doc) {
     if (err) return cb(err)
     else if (doc.type === 'changeset') {
