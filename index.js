@@ -190,6 +190,9 @@ DB.prototype.batch = function (rows, opts, cb) {
     var pending = 1 + rows.length
     rows.forEach(function (row) {
       var key = defined(row.key, row.id)
+      if (!key) {
+        key = row.key = hex2dec(randomBytes(8).toString('hex'))
+      }
       if (row.type === 'put') {
         batch.push(row)
         if (--pending === 0) done()

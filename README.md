@@ -201,7 +201,7 @@ Atomically insert an array of documents `rows`.
 Each `row` in `rows` should have:
 
 * `row.type` - `'put'` or `'del'`
-* `row.key` or `row.id` - the id of the document
+* `row.key` or `row.id` - the id of the document (generated if not specified)
 * `row.links` - array of links to ancestor keys
 * `row.value` - for puts, the value to store
 
