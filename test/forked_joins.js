@@ -66,6 +66,11 @@ test('modify way', function (t) {
     console.log('way1 version:', ways[1])
     ready()
   })
+  /**
+   *
+   * way0 ----> way1
+   *
+   */
   // After modifying way 'F' to point to 'A' and 'C' there is a single head
   // (no forks), so the join on node 'B' should not refer to any way.
   function ready () {
@@ -98,6 +103,12 @@ test('fork way', function (t) {
     t.error(err)
     ready()
   })
+  /**
+   *         /----> way1
+   * way0 ---
+   *         \----> way2
+   *
+   */
   // Now the way is forked, 'A' should be referenced by both forks, 'C' by the
   // first fork, 'D' by the second fork, and 'B' should not be referenced by either
   function ready () {
@@ -128,6 +139,12 @@ test('delete a fork', function (t) {
     t.error(err)
     ready()
   })
+  /**
+   *         /----> way1 ---> way3(deleted)
+   * way0 ---
+   *         \----> way2
+   *
+   */
   // The way is still forked, but one of the forks is deleted. 'A' should probably
   // still reference both forks? 'B' should not be referenced by anything.
   // 'C' was only referenced by the now deleted fork.
@@ -159,6 +176,11 @@ test('delete way completely', function (t) {
     t.error(err)
     ready()
   })
+  /**
+   *         /----> way1 ---> way3(deleted)---\
+   * way0 ---                                  ----> way4(deleted)
+   *         \----> way2 ---------------------/
+   */
   function ready () {
     osm.refs.list('A', function (err, refs) {
       t.error(err)
