@@ -15,6 +15,7 @@ var EventEmitter = require('events').EventEmitter
 var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
 var defined = require('defined')
+var after = require('after-all')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -51,38 +52,52 @@ function DB (opts) {
   self.refs = join({
     log: self.log,
     db: sub(self.db, 'r'),
-    map: function (row) {
+    map: function (row, cb) {
       if (!row.value) return
       var k = row.value.k, v = row.value.v || {}
       var ops = []
+      var next = after(function () {
+        cb(null, ops)
+      })
+
+      // Update refs
       var refs = v.refs || row.value.refs || []
-      refs.forEach(function (ref) {
-        row.links.forEach(function (link) {
-          ops.push({ type: 'del', key: ref, rowKey: link })
-        })
-        if (k) ops.push({ type: 'put', key: ref, value: k })
-      })
       var members = v.members || row.value.members || []
-      members.forEach(function (member) {
-        if (typeof member === 'string') member = { ref: member }
-        if (typeof member.ref !== 'string') return
-        row.links.forEach(function (link) {
-          ops.push({ type: 'del', key: member.ref, rowKey: link })
+      row.links.forEach(function (link) {
+        var done = next()
+        self.log.get(link, function (err, node) {
+          if (node.value.v.refs) {
+            ops = ops.concat(node.value.v.refs.map(function (ref) {
+              return { type: 'del', key: ref, rowKey: link }
+            }))
+          }
+          if (node.value.v.members) {
+            ops = ops.concat(node.value.v.members.map(function (member) {
+              return { type: 'del', key: member.ref || member, rowKey: link }
+            }))
+          }
+          done()
         })
-        if (k) ops.push({ type: 'put', key: member.ref, value: k })
       })
-      return ops
+      if (k) {
+        ops = ops.concat(refs.map(function (ref) {
+          return { type: 'put', key: ref, value: k }
+        }))
+        ops = ops.concat(members.map(function (member) {
+          return { type: 'put', key: member.ref || member, value: k }
+        }))
+      }
     }
   })
   self.refs.on('error', function (err) { self.emit('error', err) })
   self.changeset = join({
     log: self.log,
     db: sub(self.db, 'c'),
-    map: function (row) {
-      if (!row.value) return
+    map: function (row, cb) {
+      if (!row.value) return cb()
       var v = row.value.v
-      if (!v || !v.changeset) return
-      return { type: 'put', key: v.changeset, value: 0 }
+      if (!v || !v.changeset) return cb()
+      return cb(null, { type: 'put', key: v.changeset, value: 0 })
     }
   })
   self.changeset.on('error', function (err) { self.emit('error', err) })
