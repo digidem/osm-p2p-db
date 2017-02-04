@@ -33,7 +33,7 @@ test('setup db', function (t) {
     })
     ways[0] = versions.F
     console.log('way0 version:', ways[0])
-    ready()
+    osm.ready(ready)
   })
   // We start with 4 nodes, with 'A' and 'B' referenced by way 'F'
   function ready () {
@@ -64,7 +64,7 @@ test('modify way', function (t) {
     t.error(err)
     ways[1] = doc.key
     console.log('way1 version:', ways[1])
-    ready()
+    osm.ready(ready)
   })
   /**
    *
@@ -101,7 +101,7 @@ test('fork way', function (t) {
     ways[2] = doc.key
     console.log('way2 version:', ways[2])
     t.error(err)
-    ready()
+    osm.ready(ready)
   })
   /**
    *         /----> way1
@@ -137,7 +137,7 @@ test('delete a fork', function (t) {
   osm.del('F', {keys: [ways[1]]}, function (err, doc) {
     ways[3] = doc.key
     t.error(err)
-    ready()
+    osm.ready(ready)
   })
   /**
    *         /----> way1 ---> way3(deleted)
@@ -174,7 +174,7 @@ test('delete way completely', function (t) {
   t.plan(9)
   osm.del('F', function (err, doc) {
     t.error(err)
-    ready()
+    osm.ready(ready)
   })
   /**
    *         /----> way1 ---> way3(deleted)---\
