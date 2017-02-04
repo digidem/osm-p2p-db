@@ -102,9 +102,10 @@ DB.prototype._links = function (link, cb) {
 
 DB.prototype.ready = function (cb) {
   var self = this
-  var pending = 2
+  var pending = 3
   self.refs.dex.ready(ready)
   self.kdb.ready(ready)
+  self.changeset.dex.ready(ready)
   function ready () { if (--pending === 0) cb() }
 }
 
