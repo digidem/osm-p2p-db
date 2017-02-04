@@ -68,7 +68,7 @@ test('modify way', function (t) {
   })
   /**
    *
-   * way0 ----> way1
+   * way0 <---- way1
    *
    */
   // After modifying way 'F' to point to 'A' and 'C' there is a single head
@@ -104,9 +104,9 @@ test('fork way', function (t) {
     osm.ready(ready)
   })
   /**
-   *         /----> way1
-   * way0 ---
-   *         \----> way2
+   *          /---- way1
+   * way0 <---
+   *          \---- way2
    *
    */
   // Now the way is forked, 'A' should be referenced by both forks, 'C' by the
@@ -140,9 +140,9 @@ test('delete a fork', function (t) {
     osm.ready(ready)
   })
   /**
-   *         /----> way1 ---> way3(deleted)
-   * way0 ---
-   *         \----> way2
+   *          /---- way1 <--- way3(deleted)
+   * way0 <---
+   *          \---- way2
    *
    */
   // The way is still forked, but one of the forks is deleted. 'A' should probably
@@ -177,9 +177,9 @@ test('delete way completely', function (t) {
     osm.ready(ready)
   })
   /**
-   *         /----> way1 ---> way3(deleted)---\
-   * way0 ---                                  ----> way4(deleted)
-   *         \----> way2 ---------------------/
+   *          /--- way1 <--- way3(deleted) <---\
+   * way0 <---                                  ---- way4(deleted)
+   *          \--- way2 <----------------------/
    */
   function ready () {
     osm.refs.list('A', function (err, refs) {
