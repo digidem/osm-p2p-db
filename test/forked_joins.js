@@ -35,6 +35,7 @@ test('setup db', function (t) {
     console.log('way0 version:', ways[0])
     ready()
   })
+  // We start with 4 nodes, with 'A' and 'B' referenced by way 'F'
   function ready () {
     osm.refs.list('A', function (err, refs) {
       t.error(err)
@@ -65,6 +66,8 @@ test('modify way', function (t) {
     console.log('way1 version:', ways[1])
     ready()
   })
+  // After modifying way 'F' to point to 'A' and 'C' there is a single head
+  // (no forks), so the join on node 'B' should not refer to any way.
   function ready () {
     osm.refs.list('A', function (err, refs) {
       t.error(err)
@@ -95,6 +98,8 @@ test('fork way', function (t) {
     t.error(err)
     ready()
   })
+  // Now the way is forked, 'A' should be referenced by both forks, 'C' by the
+  // first fork, 'D' by the second fork, and 'B' should not be referenced by either
   function ready () {
     osm.refs.list('A', function (err, refs) {
       t.error(err)
@@ -119,13 +124,17 @@ test('delete a fork', function (t) {
   t.plan(9)
   // Delete first fork
   osm.del('F', {keys: [ways[1]]}, function (err, doc) {
+    ways[3] = doc.key
     t.error(err)
     ready()
   })
+  // The way is still forked, but one of the forks is deleted. 'A' should probably
+  // still reference both forks? 'B' should not be referenced by anything.
+  // 'C' was only referenced by the now deleted fork.
   function ready () {
     osm.refs.list('A', function (err, refs) {
       t.error(err)
-      t.equal(refs.length, 1, 'A referenced by a single way')
+      // TODO: change this if we change deleted fork join behaviour
       t.deepEqual(refs.map(mapKeys), [ways[2]], 'A referenced by way2')
     })
     osm.refs.list('B', function (err, refs) {
@@ -134,6 +143,7 @@ test('delete a fork', function (t) {
     })
     osm.refs.list('C', function (err, refs) {
       t.error(err)
+      // TODO: change this if we change deleted join behaviour
       t.deepEqual(refs.map(mapKeys), [], 'C no longer referenced')
     })
     osm.refs.list('D', function (err, refs) {
