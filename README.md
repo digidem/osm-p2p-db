@@ -17,6 +17,7 @@
   - [osm.batch(rows, opts={}, cb)](#osmbatchrows-opts-cb)
   - [osm.get(id, opts={}, cb)](#osmgetid-opts-cb)
   - [osm.query(q, opts, cb)](#osmqueryq-opts-cb)
+  - [osm.ready(cb)](#osmreadycb)
   - [var rstream = osm.queryStream(q, opts)](#var-rstream--osmquerystreamq-opts)
   - [var rstream = osm.getChanges(changeset, cb)](#var-rstream--osmgetchangesid-cb)
   - [osm.on('error', function (err) {})](#osmonerror-function-err-)
@@ -226,6 +227,10 @@ hash key from the underlying hyperlog.
 Optionally:
 
 * `opts.order` - set to `'type'` to order by type: node, way, relation
+
+### osm.ready(cb)
+
+Runs the callback `cb` once all of `osm`'s internal indexes are caught up to the latest data. `cb` is called exactly once.
 
 ### var rstream = osm.queryStream(q, opts)
 
