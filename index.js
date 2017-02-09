@@ -75,7 +75,9 @@ function DB (opts) {
           if (node.value.v.members) {
             for (var i = 0; i < node.value.v.members.length; i++) {
               var member = node.value.v.members[i]
-              ops.push({ type: 'del', key: member.ref || member, rowKey: link })
+              if (typeof member === 'string') member = { ref: member }
+              if (typeof member.ref !== 'string') return
+              ops.push({ type: 'del', key: member.ref, rowKey: link })
             }
           }
           done()
