@@ -67,25 +67,27 @@ function DB (opts) {
         var done = next()
         self.log.get(link, function (err, node) {
           if (node.value.v.refs) {
-            ops = ops.concat(node.value.v.refs.map(function (ref) {
-              return { type: 'del', key: ref, rowKey: link }
-            }))
+            for (var i = 0; i < node.value.v.refs.length; i++) {
+              var ref = node.value.v.refs[i]
+              ops.push({ type: 'del', key: ref, rowKey: link })
+            }
           }
           if (node.value.v.members) {
-            ops = ops.concat(node.value.v.members.map(function (member) {
-              return { type: 'del', key: member.ref || member, rowKey: link }
-            }))
+            for (var i = 0; i < node.value.v.members.length; i++) {
+              var member = node.value.v.members[i]
+              ops.push({ type: 'del', key: member.ref || member, rowKey: link })
+            }
           }
           done()
         })
       })
       if (k) {
-        ops = ops.concat(refs.map(function (ref) {
-          return { type: 'put', key: ref, value: k }
-        }))
-        ops = ops.concat(members.map(function (member) {
-          return { type: 'put', key: member.ref || member, value: k }
-        }))
+        for (var i = 0; i < refs.length; i++) {
+          ops.push({ type: 'put', key: refs[i], value: k })
+        }
+        for (var i = 0; i < members.length; i++) {
+          ops.push({ type: 'put', key: members[i].ref || members[i], value: k })
+        }
       }
     }
   })
