@@ -210,7 +210,9 @@ Each `row` in `rows` should have:
 
 Get a document as `cb(err, docs)` by its OSM `id`.
 
-`docs` is an object mapping hyperlog hashes to current document values.
+`docs` is an object mapping hyperlog hashes to current document values. If a
+document has been deleted, it will only have the properties `{ id: <osm-id>,
+version: <osm-version>, deleted: true}`.
 
 The options `opts` are passed to the underlying [hyperkv][4] instance.
 
@@ -220,9 +222,10 @@ Query for all nodes, ways, and relations in the query given by the array `q`.
 Queries are arrays of `[[minLat,maxLat],[minLon,maxLon]]` specifying a bounding
 box.
 
-`cb(err, res)` fires with an array of results `res`. Each result is the
-document augmented with an `id` property and a `version` property that is the
-hash key from the underlying hyperlog.
+`cb(err, res)` fires with an array of results `res`. Each result is the document
+augmented with an `id` property and a `version` property that is the hash key
+from the underlying hyperlog. If a document has been deleted, it will only have
+the properties `{ id: <osm-id>, version: <osm-version>, deleted: true}`.
 
 Optionally:
 
