@@ -181,20 +181,25 @@ DB.prototype.del = function (key, opts, cb) {
 
 DB.prototype._del = function (key, opts, cb) {
   var self = this
-  self.kv.get(key, function (err, values) {
+  self.kv.get(key, function (err, docs) {
     if (err) return cb(err)
-    // Filter deletions & map to old expected format.
-    values = filterObj(values, function (key, value) {
-      return !value.deleted
-    })
-    values = mapObj(values, function (key, value) {
-      return value.value
+
+    docs = mapObj(docs, function (version, value) {
+      if (value.deleted) {
+        return {
+          id: key,
+          version: version,
+          deleted: true
+        }
+      } else {
+        return value.value
+      }
     })
 
     var fields = {}
-    var links = opts.keys || Object.keys(values)
+    var links = opts.keys || Object.keys(docs)
     links.forEach(function (ln) {
-      var v = values[ln] || {}
+      var v = docs[ln] || {}
       if (v.lat !== undefined && v.lon !== undefined) {
         if (!fields.points) fields.points = []
         fields.points.push({ lat: v.lat, lon: v.lon })
@@ -256,12 +261,16 @@ DB.prototype.get = function (key, opts, cb) {
   }
   this.kv.get(key, opts, function (err, docs) {
     if (err) return cb(err)
-    // Filter deletions & map to old expected format.
-    docs = filterObj(docs, function (key, value) {
-      return !value.deleted
-    })
-    docs = mapObj(docs, function (key, value) {
-      return value.value
+    docs = mapObj(docs, function (version, value) {
+      if (value.deleted) {
+        return {
+          id: key,
+          version: version,
+          deleted: true
+        }
+      } else {
+        return value.value
+      }
     })
 
     cb(null, docs)
@@ -469,14 +478,4 @@ function mapObj (obj, fn) {
     obj[key] = fn(key, obj[key])
   })
   return obj
-}
-
-function filterObj (obj, fn) {
-  var res = {}
-  Object.keys(obj).forEach(function (key) {
-    if (fn(key, obj[key])) {
-      res[key] = obj[key]
-    }
-  })
-  return res
 }
