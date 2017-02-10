@@ -339,7 +339,10 @@ DB.prototype._onpt = function (pt, seen, cb) {
             deleted: true
           }
         }
-        addDoc(doc.value.k || doc.value.d, link, doc.value.v)
+        // TODO: open up this if() statement to expose deletions
+        if (doc.value.k) {
+          addDoc(doc.value.k || doc.value.d, link, doc.value.v)
+        }
         if (--pending === 0) cb(null, res)
       })
       pending++
