@@ -195,6 +195,9 @@ Delete a document at `id`.
 
 The options `opts` are passed to the underlying [hyperkv][4] instance.
 
+A deletion tombstone may have a value associated with it. It will be set to the
+value of `opts.value`, if set.
+
 `cb(err, node)` fires with the underlying `node` in the hyperlog.
 
 ### osm.batch(rows, opts={}, cb)
@@ -206,7 +209,7 @@ Each `row` in `rows` should have:
 * `row.type` - `'put'` or `'del'`
 * `row.key` or `row.id` - the id of the document (generated if not specified)
 * `row.links` - array of links to ancestor keys
-* `row.value` - for puts, the value to store
+* `row.value` - the value to store on a `put` or `del`
 
 ### osm.get(id, opts={}, cb)
 
