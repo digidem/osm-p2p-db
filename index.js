@@ -43,8 +43,8 @@ function DB (opts) {
       if (v && v.lat !== undefined && v.lon !== undefined) {
         next(null, { type: 'put', point: ptf(v) })
       } else if (d && Array.isArray(row.value.points)) {
-        var pt = row.value.points.map(ptf)[0]
-        next(null, { type: 'put', point: pt })
+        var pts = row.value.points.map(ptf)
+        next(null, { type: 'put', points: pts })
       } else next()
       function ptf (x) { return [ x.lat, x.lon ] }
     }
@@ -310,9 +310,11 @@ DB.prototype._onpt = function (pt, seen, cb) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
       addDoc(doc.value.k, link, doc.value.v)
     } else if (doc && doc.value && doc.value.d && doc.value.points) {
-      var pt = doc.value.points[0]
-      pt.deleted = true
-      addDoc(doc.value.d, link, pt)
+      for (var i = 0; i < doc.value.points.length; i++) {
+        var pt = doc.value.points[i]
+        pt.deleted = true
+        addDoc(doc.value.d, link, pt)
+      }
     }
     if (--pending === 0) cb(null, res)
   })
