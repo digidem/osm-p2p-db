@@ -47,6 +47,10 @@ function DB (opts) {
       var v = row.value.v
       var d = row.value.d
       if (v && v.lat !== undefined && v.lon !== undefined) {
+      var v = row.value.v
+      var d = row.value.d
+      var k = row.value.k
+      if (k && v.lat !== undefined && v.lon !== undefined) {
         next(null, { type: 'put', point: ptf(v) })
       } else if (d && Array.isArray(row.value.points)) {
         var pts = row.value.points.map(ptf)
@@ -266,7 +270,15 @@ DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
         fields.members.push.apply(fields.members, v.members)
       }
     })
-    cb(null, [ { type: 'del', key: id, links: links, fields: fields } ])
+
+    // Use opts.value to set a value on hyperkv deletions.
+    if (opts.value) {
+      fields = xtend(fields, {
+        v: opts.value
+      })
+    }
+
+    cb(null, [ { type: 'del', key: key, links: links, fields: fields } ])
   }
 }
 
