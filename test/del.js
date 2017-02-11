@@ -122,6 +122,46 @@ test('del', function (t) {
   }
 })
 
+test('del with value', function (t) {
+  t.plan(4)
+
+  var osm = osmdb({
+    log: hyperlog(memdb(), { valueEncoding: 'json' }),
+    db: memdb(),
+    store: fdstore(4096, storefile)
+  })
+
+  var doc = { type: 'node', lat: 14, lon: -14, changeset: 'foobar' }
+
+  osm.create(doc, function (err, id) {
+    t.ifError(err)
+    var v = {
+      lat: doc.lat,
+      lon: doc.lon,
+      changeset: doc.changeset
+    }
+    osm.del(id, { value: v }, function (err, node) {
+      t.ifError(err)
+      doQuery(id, node.key)
+    })
+  })
+
+  function doQuery (id, version) {
+    osm.get(id, function (err, doc) {
+      t.ifError(err)
+      var expected = {
+      changeset: 'foobar',
+        id: id,
+        lat: 14,
+        lon: -14,
+        version: version,
+        deleted: true
+      }
+      t.deepEqual(doc, expected, 'correct query /w value')
+    })
+  }
+})
+
 function idcmp (a, b) {
   return a.id < b.id ? -1 : 1
 }
