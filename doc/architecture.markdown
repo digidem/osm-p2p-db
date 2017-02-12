@@ -297,7 +297,7 @@ and obscure interfaces to carefully merge changes with the other node.
 Instead, we can think of our database as a growing list of observations.
 Replication then becomes a simple matter of sharing our observations with a
 peer. If two observations "conflict", then the only honest thing the database
-can really say is that their are two most recent versions of a document.
+can really say is that there are two most recent versions of a document.
 Diversity of opinion does not mean we need to enter into an extreme mode that
 demands our full attention for immediate resolution. If we think of the database
 as a repository of truth, it would also be unwise for our database to report
