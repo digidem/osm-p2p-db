@@ -245,12 +245,14 @@ Optionally:
 
 * `opts.order` - set to `'type'` to order by type: node, way, relation
 
-### var rstream = osm.getChanges(changeset, cb)
+### var rstream = osm.getChanges(changeset, [cb])
 
-Get the list of document ids in a changeset by a changeset id `changeset`.
+Get the list of document version ids in a changeset by a changeset id
+`changeset`.
 
-The document version ids are available as `cb(err, versions)` and as the objects
-in the readable object stream `rstream`.
+If a callback is provided, the version ids are returned as `cb(err, versions)`.
+Without callback, the versions are provided by the returned readable object
+stream `rstream`.
 
 ### osm.on('error', function (err) {})
 
