@@ -53,6 +53,8 @@ test('del batch', function (t) {
         id: 'B', version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: 'C', version: versions.C },
+      { deleted: true, lat: 64.123, lon: -147.56,
+        id: 'D', version: deletions.D },
       { deleted: true,
         id: 'E', version: deletions.E },
       { type: 'way', refs: [ 'A', 'B', 'C' ],
@@ -66,6 +68,7 @@ test('del batch', function (t) {
       t.error(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
     })
+
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
       { type: 'node', lat: 64.5, lon: -147.3,
@@ -74,6 +77,8 @@ test('del batch', function (t) {
         id: 'B', version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: 'C', version: versions.C },
+      { deleted: true,
+        id: 'E', version: deletions.E },
       { type: 'way', refs: [ 'A', 'B', 'C' ],
         id: 'F', version: versions.F }
     ].sort(idcmp)

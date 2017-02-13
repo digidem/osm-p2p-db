@@ -62,7 +62,8 @@ test('del way', function (t) {
       { type: 'node', lat: 63.9, lon: -147.6,
         id: names.B, version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C }
+        id: names.C, version: versions.C },
+      { deleted: true, id: names.D, version: versions.E }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)

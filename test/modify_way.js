@@ -29,6 +29,7 @@ test('modify way', function (t) {
   ]
   var names = {}
   var versions = {}
+  var deletions = {}
 
   ;(function next () {
     if (docs.length === 0) return ready()
@@ -42,8 +43,9 @@ test('modify way', function (t) {
     }
     delete doc.links
     if (doc.type === 'del') {
-      osm.del(key, opts, function (err) {
+      osm.del(key, opts, function (err, node) {
         t.ifError(err)
+        deletions[key] = node.key
         next()
       })
     } else {
@@ -63,7 +65,7 @@ test('modify way', function (t) {
       { type: 'node', lat: 60.6, lon: -141.2,
         id: 'E', version: versions.E },
       { type: 'way', refs: ['A','E'],
-        id: 'D', version: versions.D }
+        id: 'D', version: versions.D },
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
@@ -76,7 +78,7 @@ test('modify way', function (t) {
       { type: 'node', lat: 60.6, lon: -141.2,
         id: 'E', version: versions.E },
       { type: 'way', refs: ['A','E'],
-        id: 'D', version: versions.D }
+        id: 'D', version: versions.D },
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)
@@ -89,7 +91,11 @@ test('modify way', function (t) {
       { type: 'node', lat: 60.6, lon: -141.2,
         id: 'E', version: versions.E },
       { type: 'way', refs: ['A','E'],
-        id: 'D', version: versions.D }
+        id: 'D', version: versions.D },
+      { deleted: true, id: 'B', version: deletions.B,
+        lat: 63.9, lon: -147.6 },
+      { deleted: true, id: 'C', version: deletions.C,
+        lat: 64.2, lon: -146.5 },
     ].sort(idcmp)
     osm.query(q2, function (err, res) {
       t.ifError(err)
