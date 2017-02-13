@@ -67,7 +67,10 @@ test('del', function (t) {
       { type: 'node', lat: 64.2, lon: -146.5,
         id: names.C, version: versions.C },
       { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.F, version: versions.F }
+        id: names.F, version: versions.F },
+      { deleted: true, id: names.D, version: versions.H,
+        lat: 64.123, lon: -147.56 },
+      { deleted: true, id: names.E, version: versions.G }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
@@ -86,7 +89,8 @@ test('del', function (t) {
       { type: 'node', lat: 64.2, lon: -146.5,
         id: names.C, version: versions.C },
       { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.F, version: versions.F }
+        id: names.F, version: versions.F },
+      { deleted: true, id: names.E, version: versions.G }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)
