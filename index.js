@@ -355,10 +355,7 @@ DB.prototype._onpt = function (pt, seen, cb) {
             deleted: true
           }
         }
-        // TODO: open up this if() statement to expose deletions
-        if (doc.value.k) {
-          addDoc(doc.value.k || doc.value.d, link, doc.value.v)
-        }
+        addDoc(doc.value.k || doc.value.d, link, doc.value.v)
         if (--pending === 0) cb(null, res)
       })
       pending++
@@ -370,9 +367,6 @@ DB.prototype._onpt = function (pt, seen, cb) {
   })
 
   function addDoc (id, key, doc) {
-    // For now, filter out deleted documents.
-    if (doc.deleted) return
-
     if (!added.hasOwnProperty(key)) {
       res.push(xtend(doc, {
         id: id,
