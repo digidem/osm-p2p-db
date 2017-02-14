@@ -332,11 +332,19 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   self.log.get(version, function (err, doc) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
       addDoc(doc.value.k, version, doc.value.v)
-    } else if (doc && doc.value && doc.value.d && doc.value.points) {
-      for (var i = 0; i < doc.value.points.length; i++) {
-        var point = doc.value.points[i]
-        point.deleted = true
-        addDoc(doc.value.d, version, point)
+    } else if (doc && doc.value && doc.value.d) {
+      if (doc.value.points) {
+        for (var i = 0; i < doc.value.points.length; i++) {
+          var point = doc.value.points[i]
+          point.deleted = true
+          addDoc(doc.value.d, version, point)
+        }
+      } else if (doc.value.refs) {
+        for (var i = 0; i < doc.value.refs.length; i++) {
+          var elem = doc.value.refs[i]
+          elem.deleted = true
+          addDoc(doc.value.d, version, elem)
+        }
       }
     }
     if (--pending === 0) cb(null, res)
@@ -359,13 +367,11 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
             if (--pending === 0) cb(null, res)
           })
         } else if (doc && doc.value && doc.value.d) {
-          doc.value.v = {
-            id: doc.value.d,
-            version: link,
-            deleted: true
-          }
+          var id = doc.value.d
+          delete doc.value.d
+          doc.value.deleted = true
         }
-        addDoc(doc.value.k || doc.value.d, link, doc.value.v)
+        addDoc(doc.value.k || id, link, doc.value.v)
         if (--pending === 0) cb(null, res)
       })
       pending++
