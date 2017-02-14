@@ -113,9 +113,12 @@ function DB (opts) {
   self.changeset.on('error', function (err) { self.emit('error', err) })
 }
 
-DB.prototype._links = function (link, cb) {
+// Given the OsmVersion of a document, returns the OsmVersions of all documents
+// that reference it.
+// OsmVersion -> [OsmVersion]
+DB.prototype._getReferers = function (version, cb) {
   var self = this
-  self.log.get(link, function (err, doc) {
+  self.log.get(version, function (err, doc) {
     if (err) return cb(err)
     self.refs.list(doc.value.k || doc.value.d, function (err, rows) {
       if (err) cb(err)
@@ -294,7 +297,7 @@ DB.prototype.query = function (q, opts, cb) {
     var pending = 1, seen = {}
     pts.forEach(function (pt) {
       pending++
-      self._onpt(pt, seen, function (err, r) {
+      self._collectNodeAndReferers(kdbPointToVersion(pt), seen, function (err, r) {
         if (r) res = res.concat(r)
         if (--pending === 0) done()
       })
@@ -313,30 +316,35 @@ function cmpType (a, b) {
   return typeOrder[a.type] - typeOrder[b.type]
 }
 
-DB.prototype._onpt = function (pt, seen, cb) {
+// Given a node by its version, this collects the node itself, and also
+// recursively climbs all ways and relations that the node (or its referers)
+// are referred to by.
+// OsmVersion, { OsmVersion: Boolean } -> [OsmDocument]
+DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
-  var link = pt.value.toString('hex')
-  if (has(seen, link)) return cb(null, [])
-  seen[link] = true
+  if (has(seenAccum, version)) return cb(null, [])
+  seenAccum[version] = true
   var res = [], added = {}, pending = 2
-  self.log.get(link, function (err, doc) {
+
+  self.log.get(version, function (err, doc) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
-      addDoc(doc.value.k, link, doc.value.v)
+      addDoc(doc.value.k, version, doc.value.v)
     } else if (doc && doc.value && doc.value.d && doc.value.points) {
       for (var i = 0; i < doc.value.points.length; i++) {
-        var pt = doc.value.points[i]
-        pt.deleted = true
-        addDoc(doc.value.d, link, pt)
+        var point = doc.value.points[i]
+        point.deleted = true
+        addDoc(doc.value.d, version, point)
       }
     }
     if (--pending === 0) cb(null, res)
   })
-  self._links(link, function onlinks (err, links) {
+
+  self._getReferers(version, function onlinks (err, links) {
     if (!links) links = []
     links.forEach(function (link) {
-      if (has(seen, link)) return
-      seen[link] = true
+      if (has(seenAccum, link)) return
+      seenAccum[link] = true
       pending++
       self.log.get(link, function (err, doc) {
         if (doc && doc.value && doc.value.k && doc.value.v) {
@@ -359,7 +367,7 @@ DB.prototype._onpt = function (pt, seen, cb) {
         if (--pending === 0) cb(null, res)
       })
       pending++
-      self._links(link, function (err, links) {
+      self._getReferers(link, function (err, links) {
         onlinks(err, links)
       })
     })
@@ -378,15 +386,16 @@ DB.prototype._onpt = function (pt, seen, cb) {
       addWayNodes(doc.refs || doc.nodes)
     }
   }
+
   function addWayNodes (refs) {
     refs.forEach(function (ref) {
-      if (has(seen, ref)) return
-      seen[ref] = true
+      if (has(seenAccum, ref)) return
+      seenAccum[ref] = true
       pending++
       self.get(ref, function (err, docs) {
         Object.keys(docs || {}).forEach(function (key) {
-          if (has(seen, key)) return
-          seen[key] = true
+          if (has(seenAccum, key)) return
+          seenAccum[key] = true
           addDoc(ref, key, docs[key])
         })
         if (--pending === 0) cb(null, res)
@@ -412,7 +421,7 @@ DB.prototype.queryStream = function (q, opts) {
   function write (row, enc, next) {
     next = once(next)
     var tr = this
-    self._onpt(row, seen, function (err, res) {
+    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
       if (res) res.forEach(function (r) {
         tr.push(r)
       })
@@ -422,7 +431,7 @@ DB.prototype.queryStream = function (q, opts) {
   function writeType (row, enc, next) {
     next = once(next)
     var tr = this
-    self._onpt(row, seen, function (err, res) {
+    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
       if (res) res.forEach(function (r) {
         if (r.type === 'node') tr.push(r)
         else queue.push(r)
@@ -467,9 +476,15 @@ function collectObj (stream, cb) {
   function end () { cb(null, rows) }
 }
 
+// Object, (k, v -> v) -> Object
 function mapObj (obj, fn) {
   Object.keys(obj).forEach(function (key) {
     obj[key] = fn(key, obj[key])
   })
   return obj
+}
+
+// KdbPoint -> OsmVersion
+function kdbPointToVersion (pt) {
+  return pt.value.toString('hex')
 }
