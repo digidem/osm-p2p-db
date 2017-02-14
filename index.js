@@ -173,7 +173,7 @@ DB.prototype.del = function (key, opts, cb) {
   }
   if (!opts) opts = {}
   cb = once(cb || noop)
-  self._del(key, opts, function (err, rows) {
+  self._getDocumentDeletionBatchOps(key, opts, function (err, rows) {
     if (err) return cb(err)
     self.batch(rows, opts, function (err, nodes) {
       if (err) cb(err)
@@ -182,7 +182,8 @@ DB.prototype.del = function (key, opts, cb) {
   })
 }
 
-DB.prototype._del = function (key, opts, cb) {
+// OsmVersion, Opts -> [OsmBatchOp]
+DB.prototype._getDocumentDeletionBatchOps = function (key, opts, cb) {
   var self = this
   self.kv.get(key, function (err, docs) {
     if (err) return cb(err)
@@ -237,7 +238,8 @@ DB.prototype.batch = function (rows, opts, cb) {
         batch.push(row)
         if (--pending === 0) done()
       } else if (row.type === 'del') {
-        self._del(key, xtend(opts, row), function (err, xrows) {
+        var xrow = xtend(opts, row)
+        self._getDocumentDeletionBatchOps(key, xrow, function (err, xrows) {
           if (err) return release(cb, err)
           batch.push.apply(batch, xrows)
           if (--pending === 0) done()
