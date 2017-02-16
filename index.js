@@ -332,12 +332,8 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   self.log.get(version, function (err, doc) {
     if (doc && doc.value && doc.value.k && doc.value.v) {
       addDoc(doc.value.k, version, doc.value.v)
-    } else if (doc && doc.value && doc.value.d && doc.value.points) {
-      for (var i = 0; i < doc.value.points.length; i++) {
-        var point = doc.value.points[i]
-        point.deleted = true
-        addDoc(doc.value.d, version, point)
-      }
+    } else if (doc && doc.value && doc.value.d) {
+      addDoc(doc.value.d, version, {deleted: true})
     }
     if (--pending === 0) cb(null, res)
   })
@@ -348,24 +344,20 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       if (has(seenAccum, link)) return
       seenAccum[link] = true
       pending++
-      self.log.get(link, function (err, doc) {
-        if (doc && doc.value && doc.value.k && doc.value.v) {
+      self.log.get(link, function (err, node) {
+        if (node && node.value && node.value.k && node.value.v) {
           pending++
-          self.get(doc.value.k, function (err, xdocs) {
+          self.get(node.value.k, function (err, docs) {
             if (err) return cb(err)
-            Object.keys(xdocs).forEach(function (key) {
-              addDoc(doc.value.k, key, xdocs[key])
+            Object.keys(docs).forEach(function (key) {
+              addDoc(node.value.k, key, docs[key])
             })
             if (--pending === 0) cb(null, res)
           })
-        } else if (doc && doc.value && doc.value.d) {
-          doc.value.v = {
-            id: doc.value.d,
-            version: link,
-            deleted: true
-          }
+          addDoc(node.value.k, link, node.value.v)
+        } else if (node && node.value && node.value.d) {
+          addDoc(node.value.d, link, { deleted: true })
         }
-        addDoc(doc.value.k || doc.value.d, link, doc.value.v)
         if (--pending === 0) cb(null, res)
       })
       pending++
