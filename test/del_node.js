@@ -56,7 +56,7 @@ test('del node', function (t) {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
       { type: 'node', lat: 63.9, lon: -147.6, id: names.B, version: versions.B },
-      { deleted: true, lat: 64.5, lon: -147.3, id: names.A, version: versions.C },
+      { deleted: true, id: names.A, version: versions.C },
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)

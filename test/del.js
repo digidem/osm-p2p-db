@@ -68,8 +68,7 @@ test('del', function (t) {
         id: names.C, version: versions.C },
       { type: 'way', refs: [ names.A, names.B, names.C ],
         id: names.F, version: versions.F },
-      { deleted: true, id: names.D, version: versions.H,
-        lat: 64.123, lon: -147.56 },
+      { deleted: true, id: names.D, version: versions.H },
       { deleted: true, id: names.E, version: versions.G }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {

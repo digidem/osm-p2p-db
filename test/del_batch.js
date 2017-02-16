@@ -53,10 +53,8 @@ test('del batch', function (t) {
         id: 'B', version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: 'C', version: versions.C },
-      { deleted: true, lat: 64.123, lon: -147.56,
-        id: 'D', version: deletions.D },
-      { deleted: true,
-        id: 'E', version: deletions.E },
+      { deleted: true, id: 'D', version: deletions.D },
+      { deleted: true, id: 'E', version: deletions.E },
       { type: 'way', refs: [ 'A', 'B', 'C' ],
         id: 'F', version: versions.F }
     ].sort(idcmp)
@@ -77,8 +75,7 @@ test('del batch', function (t) {
         id: 'B', version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: 'C', version: versions.C },
-      { deleted: true,
-        id: 'E', version: deletions.E },
+      { deleted: true, id: 'E', version: deletions.E },
       { type: 'way', refs: [ 'A', 'B', 'C' ],
         id: 'F', version: versions.F }
     ].sort(idcmp)

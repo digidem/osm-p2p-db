@@ -57,8 +57,6 @@ test('refbug', function (t) {
       })
       t.deepEqual(node2, {
         id: 'n2',
-        lat: 64.6,
-        lon: -147.8,
         deleted: true,
         id: 'n2',
         version: deletions['n2']

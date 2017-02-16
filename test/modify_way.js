@@ -92,10 +92,8 @@ test('modify way', function (t) {
         id: 'E', version: versions.E },
       { type: 'way', refs: ['A','E'],
         id: 'D', version: versions.D },
-      { deleted: true, id: 'B', version: deletions.B,
-        lat: 63.9, lon: -147.6 },
-      { deleted: true, id: 'C', version: deletions.C,
-        lat: 64.2, lon: -146.5 },
+      { deleted: true, id: 'B', version: deletions.B },
+      { deleted: true, id: 'C', version: deletions.C }
     ].sort(idcmp)
     osm.query(q2, function (err, res) {
       t.ifError(err)
