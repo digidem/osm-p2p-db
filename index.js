@@ -23,14 +23,18 @@ inherits(DB, EventEmitter)
 function DB (opts) {
   var self = this
   if (!(self instanceof DB)) return new DB(opts)
+
   self.log = opts.log
   self.db = opts.db
+
   self.kv = defined(opts.kv, hyperkv({
     log: self.log,
     db: sub(self.db, 'kv')
   }))
   self.kv.on('error', function (err) { self.emit('error', err) })
+
   self.lock = lock()
+
   self.kdb = hyperkdb({
     log: self.log,
     store: opts.store,
@@ -50,6 +54,7 @@ function DB (opts) {
     }
   })
   self.kdb.on('error', function (err) { self.emit('error', err) })
+
   self.refs = join({
     log: self.log,
     db: sub(self.db, 'r'),
@@ -100,6 +105,7 @@ function DB (opts) {
     }
   })
   self.refs.on('error', function (err) { self.emit('error', err) })
+
   self.changeset = join({
     log: self.log,
     db: sub(self.db, 'c'),
@@ -114,7 +120,7 @@ function DB (opts) {
 }
 
 // Given the OsmVersion of a document, returns the OsmVersions of all documents
-// that reference it.
+// that reference it (non-recursively).
 // OsmVersion -> [OsmVersion]
 DB.prototype._getReferers = function (version, cb) {
   var self = this
@@ -329,12 +335,8 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   seenAccum[version] = true
   var res = [], added = {}, pending = 2
 
-  self.log.get(version, function (err, doc) {
-    if (doc && doc.value && doc.value.k && doc.value.v) {
-      addDoc(doc.value.k, version, doc.value.v)
-    } else if (doc && doc.value && doc.value.d) {
-      addDoc(doc.value.d, version, {deleted: true})
-    }
+  self.log.get(version, function (err, node) {
+    addDocFromNode(node)
     if (--pending === 0) cb(null, res)
   })
 
@@ -345,6 +347,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       seenAccum[link] = true
       pending++
       self.log.get(link, function (err, node) {
+        addDocFromNode(node)
         if (node && node.value && node.value.k && node.value.v) {
           pending++
           self.get(node.value.k, function (err, docs) {
@@ -354,9 +357,6 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
             })
             if (--pending === 0) cb(null, res)
           })
-          addDoc(node.value.k, link, node.value.v)
-        } else if (node && node.value && node.value.d) {
-          addDoc(node.value.d, link, { deleted: true })
         }
         if (--pending === 0) cb(null, res)
       })
@@ -367,6 +367,14 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
     })
     if (--pending === 0) cb(null, res)
   })
+
+  function addDocFromNode (node) {
+    if (node && node.value && node.value.k && node.value.v) {
+      addDoc(node.value.k, node.key, node.value.v)
+    } else if (node && node.value && node.value.d) {
+      addDoc(node.value.d, node.key, {deleted: true})
+    }
+  }
 
   function addDoc (id, key, doc) {
     if (!added.hasOwnProperty(key)) {
