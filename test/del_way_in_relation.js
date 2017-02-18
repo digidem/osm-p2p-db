@@ -11,7 +11,7 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('delete a way from a relation', function (t) {
-  t.plan(18)
+  t.plan(19)
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -24,7 +24,7 @@ test('delete a way from a relation', function (t) {
     D: { type: 'node', lat: 64.123, lon: -147.56 },
     E: { type: 'way', refs: [ 'A', 'B', 'C', 'D' ] },
     F: { d: 'E' },
-    G: { type: 'relation', refs: [ 'E' ] }
+    G: { type: 'relation', members: [ 'E' ] }
   }
   var names = {}
   var nodes = {}
@@ -37,6 +37,9 @@ test('delete a way from a relation', function (t) {
     var doc = docs[key]
     if (doc.refs) {
       doc.refs = doc.refs.map(function (ref) { return names[ref] })
+    }
+    if (doc.members) {
+      doc.members = doc.members.map(function (ref) { return names[ref] })
     }
     if (doc.d) {
       osm.del(names[doc.d], function (err, node) {
@@ -75,9 +78,9 @@ test('delete a way from a relation', function (t) {
         id: names.C, version: versions.C },
       { type: 'node', lat: 64.123, lon: -147.56,
         id: names.D, version: versions.D },
-      { deleted: true,// refs: [ names.A, names.B, names.C, names.D ],
+      { deleted: true,
         id: names.E, version: versions.F },
-      { type: 'relation', refs: [ names.E ],
+      { type: 'relation', members: [ names.E ],
         id: names.G, version: versions.G },
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
@@ -88,7 +91,7 @@ test('delete a way from a relation', function (t) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
     })
-    return
+
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
       { type: 'node', lat: 64.5, lon: -147.3,
@@ -97,18 +100,23 @@ test('delete a way from a relation', function (t) {
         id: names.B, version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: names.C, version: versions.C },
-      { deleted: true, id: names.D, version: versions.F },
-      { type: 'way', refs: [ names.A, names.B, names.C, names.D ],
-        id: names.E, version: versions.E }
+      { type: 'node', lat: 64.123, lon: -147.56,
+        id: names.D, version: versions.D },
+      { deleted: true,
+        id: names.E, version: versions.F },
+      { type: 'relation', members: [ names.E ],
+        id: names.G, version: versions.G },
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage query')
     })
+
     collect(osm.queryStream(q1), function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')
     })
+
     var q2 = [[62,64],[-147,-145]]
     var ex2 = []
     osm.query(q2, function (err, res) {

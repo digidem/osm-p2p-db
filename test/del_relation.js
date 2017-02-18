@@ -23,7 +23,7 @@ test('del relation', function (t) {
     B: { type: 'node', lat: 63.9, lon: -147.6 },
     C: { type: 'node', lat: 64.2, lon: -146.5 },
     D: { type: 'way', refs: [ 'A', 'B', 'C' ] },
-    E: { type: 'relation', refs: [ 'A', 'B', 'D' ] },
+    E: { type: 'relation', members: [ 'A', 'B', 'D' ] },
     F: { d: 'E' }
   }
   var names = {}
@@ -37,6 +37,9 @@ test('del relation', function (t) {
     var doc = docs[key]
     if (doc.refs) {
       doc.refs = doc.refs.map(function (ref) { return names[ref] })
+    }
+    if (doc.members) {
+      doc.members = doc.members.map(function (ref) { return names[ref] })
     }
     if (doc.d) {
       osm.del(names[doc.d], function (err, node) {
@@ -93,8 +96,8 @@ test('del relation in relation', function (t) {
     B: { type: 'node', lat: 63.9, lon: -147.6 },
     C: { type: 'node', lat: 64.2, lon: -146.5 },
     D: { type: 'way', refs: [ 'A', 'B', 'C' ] },
-    E: { type: 'relation', refs: [ 'A', 'B', 'D' ] },
-    F: { type: 'relation', refs: [ 'A', 'E', 'D' ] },
+    E: { type: 'relation', members: [ 'A', 'B', 'D' ] },
+    F: { type: 'relation', members: [ 'A', 'E', 'D' ] },
     G: { d: 'F' },
   }
   var names = {}
@@ -108,6 +111,9 @@ test('del relation in relation', function (t) {
     var doc = docs[key]
     if (doc.refs) {
       doc.refs = doc.refs.map(function (ref) { return names[ref] })
+    }
+    if (doc.members) {
+      doc.members = doc.members.map(function (ref) { return names[ref] })
     }
     if (doc.d) {
       osm.del(names[doc.d], function (err, node) {
@@ -138,7 +144,7 @@ test('del relation in relation', function (t) {
         id: names.C, version: versions.C },
       { type: 'way', refs: [names.A, names.B, names.C],
         id: names.D, version: versions.D },
-      { type: 'relation', refs: [names.A, names.B, names.D],
+      { type: 'relation', members: [names.A, names.B, names.D],
         id: names.E, version: versions.E },
       { deleted: true, id: names.F, version: versions.G }
     ].sort(idcmp)

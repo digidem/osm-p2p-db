@@ -378,13 +378,21 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
 
   function addDoc (id, key, doc) {
     if (!added.hasOwnProperty(key)) {
-      res.push(xtend(doc, {
+      doc = xtend(doc, {
         id: id,
         version: key
-      }))
+      })
+      res.push(doc)
       added[key] = true
     }
-    if (doc && Array.isArray(doc.refs || doc.nodes)) {
+
+    if (doc && doc.deleted) {
+      pending++
+      getWayNodesOfDeletedDoc(self, doc.version, function (err, refs) {
+        addWayNodes(refs)
+        if (--pending === 0) cb(null, res)
+      })
+    } else if (doc && Array.isArray(doc.refs || doc.nodes)) {
       addWayNodes(doc.refs || doc.nodes)
     }
   }
@@ -489,4 +497,32 @@ function mapObj (obj, fn) {
 // KdbPoint -> OsmVersion
 function kdbPointToVersion (pt) {
   return pt.value.toString('hex')
+}
+
+// OsmDb, OsmVersion -> [OsmId]
+function getWayNodesOfDeletedDoc (osm, version, cb) {
+  getTypeOfDeletedDoc(osm, version, function (err, type) {
+    if (err) return cb(err)
+    if (type === 'way') {
+      osm.log.get(version, function (err, node) {
+        if (err) return cb(err)
+        return cb(null, node.value.refs)
+      })
+    } else {
+      cb(null, [])
+    }
+  })
+}
+
+// OsmDb, OsmVersion -> String
+function getTypeOfDeletedDoc (osm, version, cb) {
+  osm.log.get(version, function (err, node) {
+    if (err) return cb(err)
+    if (node.value && node.value.v && node.value.v.type) {
+      return cb(null, node.value.v.type)
+    }
+    if (node.links.length === 0) return cb(new Error('not a deleted doc'))
+
+    getTypeOfDeletedDoc(osm, node.links[0], cb)
+  })
 }
