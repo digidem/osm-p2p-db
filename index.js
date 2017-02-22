@@ -346,7 +346,9 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
     if (--pending === 0) cb(null, res)
   })
 
-  self._getReferers(version, function onlinks (err, links) {
+  self._getReferers(version, onLinks)
+
+  function onLinks (err, links) {
     if (!links) links = []
     links.forEach(function (link) {
       if (has(seenAccum, link)) return
@@ -367,12 +369,12 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
         if (--pending === 0) cb(null, res)
       })
       pending++
-      self._getReferers(link, function (err, links) {
-        onlinks(err, links)
+      self._getReferers(link, function (err, links2) {
+        onLinks(err, links2)
       })
     })
     if (--pending === 0) cb(null, res)
-  })
+  }
 
   function addDocFromNode (node) {
     if (node && node.value && node.value.k && node.value.v) {
