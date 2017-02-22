@@ -200,15 +200,15 @@ DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
   self.kv.get(id, function (err, docs) {
     if (err) return cb(err)
 
-    docs = mapObj(docs, function (version, value) {
-      if (value.deleted) {
+    docs = mapObj(docs, function (version, doc) {
+      if (doc.deleted) {
         return {
           id: id,
           version: version,
           deleted: true
         }
       } else {
-        return value.value
+        return doc.value
       }
     })
 
@@ -278,15 +278,15 @@ DB.prototype.get = function (key, opts, cb) {
   }
   this.kv.get(key, function (err, docs) {
     if (err) return cb(err)
-    docs = mapObj(docs, function (version, value) {
-      if (value.deleted) {
+    docs = mapObj(docs, function (version, doc) {
+      if (doc.deleted) {
         return {
           id: key,
           version: version,
           deleted: true
         }
       } else {
-        return value.value
+        return doc.value
       }
     })
 
