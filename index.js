@@ -276,7 +276,7 @@ DB.prototype.get = function (key, opts, cb) {
     cb = opts
     opts = {}
   }
-  this.kv.get(key, opts, function (err, docs) {
+  this.kv.get(key, function (err, docs) {
     if (err) return cb(err)
     docs = mapObj(docs, function (version, value) {
       if (value.deleted) {
