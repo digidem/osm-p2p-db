@@ -188,16 +188,16 @@ DB.prototype.del = function (key, opts, cb) {
   })
 }
 
-// OsmVersion, Opts -> [OsmBatchOp]
-DB.prototype._getDocumentDeletionBatchOps = function (key, opts, cb) {
+// OsmId, Opts -> [OsmBatchOp]
+DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
   var self = this
-  self.kv.get(key, function (err, docs) {
+  self.kv.get(id, function (err, docs) {
     if (err) return cb(err)
 
     docs = mapObj(docs, function (version, value) {
       if (value.deleted) {
         return {
-          id: key,
+          id: id,
           version: version,
           deleted: true
         }
@@ -219,7 +219,7 @@ DB.prototype._getDocumentDeletionBatchOps = function (key, opts, cb) {
         fields.refs.push.apply(fields.refs, v.refs)
       }
     })
-    cb(null, [ { type: 'del', key: key, links: links, fields: fields } ])
+    cb(null, [ { type: 'del', key: id, links: links, fields: fields } ])
   })
 }
 
