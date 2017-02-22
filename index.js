@@ -179,12 +179,18 @@ DB.prototype.del = function (key, opts, cb) {
   }
   if (!opts) opts = {}
   cb = once(cb || noop)
-  self._getDocumentDeletionBatchOps(key, opts, function (err, rows) {
-    if (err) return cb(err)
-    self.batch(rows, opts, function (err, nodes) {
-      if (err) cb(err)
-      else cb(null, nodes[0])
-    })
+
+  var rows = [
+    {
+      type: 'del',
+      key: key,
+      links: opts.links || []
+    }
+  ]
+
+  self.batch(rows, opts, function (err, nodes) {
+    if (err) cb(err)
+    else cb(null, nodes[0])
   })
 }
 
