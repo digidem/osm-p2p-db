@@ -214,8 +214,6 @@ Get a document as `cb(err, docs)` by its OSM `id`.
 document has been deleted, it will only have the properties `{ id: <osm-id>,
 version: <osm-version>, deleted: true}`.
 
-The options `opts` are passed to the underlying [hyperkv][4] instance.
-
 ### osm.query(q, opts, cb)
 
 Query for all nodes, ways, and relations in the query given by the array `q`.

@@ -16,6 +16,7 @@ var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
 var defined = require('defined')
 var after = require('after-all')
+var mapLimit = require('map-limit')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -184,7 +185,7 @@ DB.prototype.del = function (key, opts, cb) {
     {
       type: 'del',
       key: key,
-      links: opts.links || []
+      links: opts.links || undefined
     }
   ]
 
@@ -197,23 +198,56 @@ DB.prototype.del = function (key, opts, cb) {
 // OsmId, Opts -> [OsmBatchOp]
 DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
   var self = this
-  self.kv.get(id, function (err, docs) {
-    if (err) return cb(err)
 
-    docs = mapObj(docs, function (version, doc) {
-      if (doc.deleted) {
-        return {
-          id: id,
-          version: version,
-          deleted: true
+  if (!opts || !opts.links) {
+    // Fetch all versions of the document ID
+    self.kv.get(id, function (err, docs) {
+      if (err) return cb(err)
+
+      docs = mapObj(docs, function (version, doc) {
+        if (doc.deleted) {
+          return {
+            id: id,
+            version: version,
+            deleted: true
+          }
+        } else {
+          return doc.value
         }
-      } else {
-        return doc.value
-      }
-    })
+      })
 
+      handleLinks(docs)
+    })
+  } else {
+    // Fetch all versions of documents that match 'opts.links`.
+    mapLimit(opts.links, 10, linkToDocument, function (err, docList) {
+      if (err) return cb(err)
+      var docs = {}
+      docList.forEach(function (doc) {
+        docs[doc.version] = doc
+      })
+      handleLinks(docs)
+    })
+  }
+
+  function linkToDocument (link, done) {
+    self.log.get(link, function (err, node) {
+      if (err) return done(err)
+
+      done(null, node.value.d ? {
+        id: node.value.d,
+        version: node.key,
+        deleted: true
+      } : xtend(node.value.v, {
+        id: node.value.k,
+        version: node.key
+      }))
+    })
+  }
+
+  function handleLinks (docs) {
     var fields = {}
-    var links = opts.keys || Object.keys(docs)
+    var links = Object.keys(docs)
     links.forEach(function (ln) {
       var v = docs[ln] || {}
       if (v.lat !== undefined && v.lon !== undefined) {
@@ -226,7 +260,7 @@ DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
       }
     })
     cb(null, [ { type: 'del', key: id, links: links, fields: fields } ])
-  })
+  }
 }
 
 DB.prototype.batch = function (rows, opts, cb) {
