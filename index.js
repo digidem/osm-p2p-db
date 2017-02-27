@@ -372,18 +372,30 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
   if (has(seenAccum, version)) return cb(null, [])
-  seenAccum[version] = true
-  var res = [], added = {}, pending = 2
+  var res = [], added = {}, pending = 1
 
+  // Track the original node that came from the kdb query that brought us here,
+  // but don't add it yet. There are certain conditions (e.g. there is only one
+  // way containing us, and it's deleted) where the node would not be returned.
+  var selfNode
+  var originalNode
   self.log.get(version, function (err, node) {
-    addDocFromNode(node)
-    if (--pending === 0) cb(null, res)
+    selfNode = node
+    originalNode = node
+    self._getReferers(version, onLinks)
   })
-
-  self._getReferers(version, onLinks)
 
   function onLinks (err, links) {
     if (!links) links = []
+
+    // The original node has nothing referring to it, so it's a standalone node
+    // on the map: add it.
+    if (links.length === 0 && selfNode && !has(seenAccum, selfNode.key)) {
+      addDocFromNode(selfNode)
+      seenAccum[selfNode.key] = true
+    }
+    selfNode = null
+
     links.forEach(function (link) {
       if (has(seenAccum, link)) return
       seenAccum[link] = true
@@ -391,6 +403,13 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       self.log.get(link, function (err, node) {
         addDocFromNode(node)
         if (node && node.value && node.value.k && node.value.v) {
+          // Add the original node if a referer is a relation.
+          if (originalNode && !has(seenAccum, originalNode.key) && node.value.v.type === 'relation') {
+            addDocFromNode(originalNode)
+            seenAccum[originalNode.key] = true
+            originalNode = null
+          }
+
           pending++
           self.get(node.value.k, function (err, docs) {
             if (err) return cb(err)
@@ -404,9 +423,11 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       })
       pending++
       self._getReferers(link, function (err, links2) {
+        originalNode = null
         onLinks(err, links2)
       })
     })
+
     if (--pending === 0) cb(null, res)
   }
 
@@ -418,23 +439,17 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
     }
   }
 
-  function addDoc (id, key, doc) {
-    if (!added.hasOwnProperty(key)) {
+  function addDoc (id, version, doc) {
+    if (!has(added, version)) {
       doc = xtend(doc, {
         id: id,
-        version: key
+        version: version
       })
       res.push(doc)
-      added[key] = true
+      added[version] = true
     }
 
-    if (doc && doc.deleted) {
-      pending++
-      getWayNodesOfDeletedDoc(self, doc.version, function (err, refs) {
-        addWayNodes(refs)
-        if (--pending === 0) cb(null, res)
-      })
-    } else if (doc && Array.isArray(doc.refs || doc.nodes)) {
+    if (doc && Array.isArray(doc.refs || doc.nodes)) {
       addWayNodes(doc.refs || doc.nodes)
     }
   }
@@ -539,32 +554,4 @@ function mapObj (obj, fn) {
 // KdbPoint -> OsmVersion
 function kdbPointToVersion (pt) {
   return pt.value.toString('hex')
-}
-
-// OsmDb, OsmVersion -> [OsmId]
-function getWayNodesOfDeletedDoc (osm, version, cb) {
-  getTypeOfDeletedDoc(osm, version, function (err, type) {
-    if (err) return cb(err)
-    if (type === 'way') {
-      osm.log.get(version, function (err, node) {
-        if (err) return cb(err)
-        return cb(null, node.value.refs)
-      })
-    } else {
-      cb(null, [])
-    }
-  })
-}
-
-// OsmDb, OsmVersion -> String
-function getTypeOfDeletedDoc (osm, version, cb) {
-  osm.log.get(version, function (err, node) {
-    if (err) return cb(err)
-    if (node.value && node.value.v && node.value.v.type) {
-      return cb(null, node.value.v.type)
-    }
-    if (node.links.length === 0) return cb(new Error('not a deleted doc'))
-
-    getTypeOfDeletedDoc(osm, node.links[0], cb)
-  })
 }

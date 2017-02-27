@@ -58,12 +58,6 @@ test('del way', function (t) {
   function ready () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C },
       { deleted: true, id: names.D, version: versions.E }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
@@ -77,12 +71,6 @@ test('del way', function (t) {
 
     var q1 = [[63,64],[-148,-146]]
     var ex1 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C },
       { deleted: true, id: names.D, version: versions.E }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {

@@ -65,5 +65,4 @@ test('forked node /w merging delete', function (t) {
       t.deepEqual(actual, expected, 'full coverage query')
     })
   }
-
 })

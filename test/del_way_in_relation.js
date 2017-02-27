@@ -70,14 +70,6 @@ test('delete a way from a relation', function (t) {
   function ready () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C },
-      { type: 'node', lat: 64.123, lon: -147.56,
-        id: names.D, version: versions.D },
       { deleted: true,
         id: names.E, version: versions.F },
       { type: 'relation', members: [ names.E ],
@@ -94,14 +86,6 @@ test('delete a way from a relation', function (t) {
 
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C },
-      { type: 'node', lat: 64.123, lon: -147.56,
-        id: names.D, version: versions.D },
       { deleted: true,
         id: names.E, version: versions.F },
       { type: 'relation', members: [ names.E ],

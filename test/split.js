@@ -42,7 +42,7 @@ test('split', function (t) {
     osm.query(q, function (err, res) {
       t.error(err)
       var docs = res.map(function (r) {
-        return [ r.id, r.deleted || false]
+        return [ r.id, !!r.deleted ]
       })
       docs.sort(function cmp (a, b) {
         return a[0] < b[0] ? -1 : 1
@@ -50,7 +50,6 @@ test('split', function (t) {
       var rows = {}
       res.forEach(function (r) { rows[r.id] = r })
       t.deepEqual(docs, [
-        ['A', true],
         ['B', false],
         ['C', false],
         ['D', true],
