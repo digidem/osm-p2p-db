@@ -258,6 +258,10 @@ DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
         if (!fields.refs) fields.refs = []
         fields.refs.push.apply(fields.refs, v.refs)
       }
+      if (Array.isArray(v.members)) {
+        if (!fields.members) fields.members = []
+        fields.members.push.apply(fields.members, v.members)
+      }
     })
     cb(null, [ { type: 'del', key: id, links: links, fields: fields } ])
   }
