@@ -347,13 +347,15 @@ DB.prototype.query = function (q, opts, cb) {
   function onquery (err, pts) {
     if (err) return cb(err)
     var pending = 1, seen = {}
-    pts.forEach(function (pt) {
+    for (var i = 0; i < pts.length; i++) {
+      var pt = pts[i]
       pending++
       self._collectNodeAndReferers(kdbPointToVersion(pt), seen, function (err, r) {
+        if (err) return cb(err)
         if (r) res = res.concat(r)
         if (--pending === 0) done()
       })
-    })
+    }
     if (--pending === 0) done()
   }
   function done () {
@@ -493,6 +495,7 @@ DB.prototype.queryStream = function (q, opts) {
     next = once(next)
     var tr = this
     self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+      if (err) return next()
       if (res) res.forEach(function (r) {
         tr.push(r)
       })
@@ -503,6 +506,7 @@ DB.prototype.queryStream = function (q, opts) {
     next = once(next)
     var tr = this
     self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+      if (err) return next()
       if (res) res.forEach(function (r) {
         if (r.type === 'node') tr.push(r)
         else queue.push(r)
