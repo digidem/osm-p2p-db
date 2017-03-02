@@ -5,13 +5,14 @@ var path = require('path')
 var memdb = require('memdb')
 
 var tmpdir = require('os').tmpdir()
-var storefile0 = path.join(tmpdir, 'osm-store-' + Math.random())
-var storefile1 = path.join(tmpdir, 'osm-store-' + Math.random())
 
 var osmdb = require('../')
 
 test('count forks', function (t) {
   t.plan(12)
+
+  var storefile0 = path.join(tmpdir, 'osm-store-' + Math.random())
+  var storefile1 = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm0 = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -23,6 +24,7 @@ test('count forks', function (t) {
     store: fdstore(4096, storefile1),
     size: 4096
   })
+
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },

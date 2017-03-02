@@ -6,17 +6,19 @@ var memdb = require('memdb')
 var collect = require('collect-stream')
 
 var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 
 var osmdb = require('../')
 
 test('create 3 nodes and a way', function (t) {
   t.plan(16)
+
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
     store: fdstore(4096, storefile)
   })
+
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },

@@ -6,7 +6,6 @@ var memdb = require('memdb')
 var collect = require('collect-stream')
 
 var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 
 var osmdb = require('../')
 
@@ -27,11 +26,14 @@ test('batch relation of ways', function (t) {
       { type: 'node', ref: 'G' }
     ] } }
   ]
+
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
     store: fdstore(4096, storefile)
   })
+
   osm.batch(batch, function (err) {
     t.error(err)
     var q0 = [[62,63],[-145.5,-144.5]]

@@ -7,15 +7,17 @@ var data = require('./data/refbug.json')
 var osmdb = require('../')
 
 var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 
 test('refbug', function (t) {
   t.plan(data.length + 5)
+
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
     store: fdstore(4096, storefile)
   })
+
   var nodes = [], docs = {}, deletions = {}
   ;(function next () {
     if (data.length === 0) return ready()
@@ -71,6 +73,7 @@ test('refbug', function (t) {
 })
 
 test('refbug 2: nodes referred to by old versions of a way are retained', function (t) {
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -144,6 +147,7 @@ test('refbug 2: nodes referred to by old versions of a way are retained', functi
 })
 
 test('refbug 2: ways referred to by old versions of a relation are retained', function (t) {
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),

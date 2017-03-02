@@ -5,18 +5,20 @@ var path = require('path')
 var memdb = require('memdb')
 
 var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 
 var osmdb = require('../')
 
 test('changeset', function (t) {
   t.plan(15)
+
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
     store: fdstore(4096, storefile),
     size: 4096
   })
+
   var docs = {
     A: { type: 'changeset', tags: { comment: 'whatever' } },
     B: { type: 'node', lat: 64.5, lon: -147.3, changeset: 'A' },

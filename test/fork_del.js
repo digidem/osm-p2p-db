@@ -5,7 +5,6 @@ var path = require('path')
 var memdb = require('memdb')
 
 var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 
 var osmdb = require('../')
 
@@ -15,6 +14,7 @@ var osmdb = require('../')
 test('forked node /w merging delete', function (t) {
   t.plan(13)
 
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),

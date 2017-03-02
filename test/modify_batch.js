@@ -6,17 +6,19 @@ var memdb = require('memdb')
 var collect = require('collect-stream')
 
 var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 
 var osmdb = require('../')
 
 test('del batch', function (t) {
   t.plan(14)
+
+  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
     store: fdstore(4096, storefile)
   })
+
   var batch0 = [
     { type: 'put', key: 'A', value: { type: 'node', lat: 64.5, lon: -147.3 } },
     { type: 'put', key: 'B', value: { type: 'node', lat: 1.0, lon: 2.0 } },
