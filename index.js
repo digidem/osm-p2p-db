@@ -74,6 +74,9 @@ function DB (opts) {
       row.links.forEach(function (link) {
         var done = next()
         self.log.get(link, function (err, node) {
+          if (err && err.notFound) return done()
+          else if (err) return done(err)
+
           if (node.value.v.refs) {
             for (var i = 0; i < node.value.v.refs.length; i++) {
               var ref = node.value.v.refs[i]
@@ -386,12 +389,15 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   var selfNode
   var originalNode
   self.log.get(version, function (err, node) {
+    if (err) return cb(err)
     selfNode = node
     originalNode = node
     self._getReferers(version, onLinks)
   })
 
   function onLinks (err, links) {
+    if (err) return cb(err)
+
     if (!links) links = []
 
     // The original node has nothing referring to it, so it's a standalone node
@@ -407,6 +413,8 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       seenAccum[link] = true
       pending++
       self.log.get(link, function (err, node) {
+        if (err) return cb(err)
+
         addDocFromNode(node)
         if (node && node.value && node.value.k && node.value.v) {
           // Add the original node if a referer is a relation.
@@ -419,6 +427,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
           pending++
           self.get(node.value.k, function (err, docs) {
             if (err) return cb(err)
+
             Object.keys(docs).forEach(function (key) {
               addDoc(node.value.k, key, docs[key])
             })
@@ -466,6 +475,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       seenAccum[ref] = true
       pending++
       self.get(ref, function (err, docs) {
+        if (err) return cb(err)
         Object.keys(docs || {}).forEach(function (key) {
           if (has(seenAccum, key)) return
           seenAccum[key] = true
