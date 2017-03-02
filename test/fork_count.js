@@ -3,7 +3,6 @@ var hyperlog = require('hyperlog')
 var fdstore = require('fd-chunk-store')
 var path = require('path')
 var memdb = require('memdb')
-var collect = require('collect-stream')
 
 var tmpdir = require('os').tmpdir()
 var storefile0 = path.join(tmpdir, 'osm-store-' + Math.random())
@@ -99,10 +98,3 @@ test('count forks', function (t) {
     })
   }
 })
-
-function idcmp (a, b) {
-  var aloc = a.lat + ',' + a.lon
-  var bloc = b.lat + ',' + b.lon
-  if (a.id === b.id) return aloc < bloc ? -1 : 1
-  return a.id < b.id ? -1 : 1
-}

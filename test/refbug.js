@@ -58,7 +58,6 @@ test('refbug', function (t) {
       t.deepEqual(node2, {
         id: 'n2',
         deleted: true,
-        id: 'n2',
         version: deletions['n2']
       })
       t.deepEqual(way, {

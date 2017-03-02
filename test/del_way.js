@@ -75,11 +75,11 @@ test('del way', function (t) {
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)
-      t.deepEqual(res.sort(idcmp), ex0, 'partial coverage query')
+      t.deepEqual(res.sort(idcmp), ex1, 'partial coverage query')
     })
     collect(osm.queryStream(q1), function (err, res) {
       t.ifError(err)
-      t.deepEqual(res.sort(idcmp), ex0, 'partial coverage stream')
+      t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')
     })
   }
 })

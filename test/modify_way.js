@@ -3,7 +3,6 @@ var hyperlog = require('hyperlog')
 var fdstore = require('fd-chunk-store')
 var path = require('path')
 var memdb = require('memdb')
-var collect = require('collect-stream')
 
 var tmpdir = require('os').tmpdir()
 var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
@@ -27,7 +26,6 @@ test('modify way', function (t) {
     { type: 'del', id: 'B', links: ['B'] },
     { type: 'del', id: 'C', links: ['C'] }
   ]
-  var names = {}
   var versions = {}
   var deletions = {}
 
