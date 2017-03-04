@@ -4,12 +4,15 @@ var fdstore = require('fd-chunk-store')
 var path = require('path')
 var memdb = require('memdb')
 var collect = require('collect-stream')
+var osmSetup = require('./osm-setup')
 
 var tmpdir = require('os').tmpdir()
 
 var osmdb = require('../')
 
 test('relations of relations', function (t) {
+  t.plan(5)
+
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },
@@ -35,8 +38,6 @@ test('relations of relations', function (t) {
       { type: 'relation', ref: 'N' }
     ] }
   }
-  var keys = Object.keys(docs).sort()
-  t.plan(keys.length + 4)
 
   var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
@@ -44,30 +45,10 @@ test('relations of relations', function (t) {
     db: memdb(),
     store: fdstore(4096, storefile)
   })
-  var names = {}
-  var nodes = {}
-  var versions = {}
 
-  ;(function next () {
-    if (keys.length === 0) return ready()
-    var key = keys.shift()
-    var doc = docs[key]
-    if (doc.refs) {
-      doc.refs = doc.refs.map(function (ref) { return names[ref] })
-    }
-    ;(doc.members || []).forEach(function (member) {
-      if (member.ref) member.ref = names[member.ref]
-    })
-    osm.create(doc, function (err, k, node) {
-      t.ifError(err)
-      names[key] = k
-      versions[key] = node.key
-      nodes[k] = node
-      next()
-    })
-  })()
+  osmSetup(osm, docs, function (err, nodes, versions, names) {
+    t.ifError(err)
 
-  function ready () {
     var q0 = [[62,63],[-145.5,-144.5]]
     var ex0 = [
       { type: 'node', lat: 62.1, lon: -145.1,
@@ -99,7 +80,7 @@ test('relations of relations', function (t) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'relation of relations stream')
     })
-  }
+  })
 })
 
 function idcmp (a, b) {

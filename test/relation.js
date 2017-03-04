@@ -6,6 +6,7 @@ var memdb = require('memdb')
 var collect = require('collect-stream')
 
 var tmpdir = require('os').tmpdir()
+var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 
 var osmdb = require('../')
 
@@ -28,7 +29,6 @@ test('relation of ways', function (t) {
   var keys = Object.keys(docs).sort()
   t.plan(keys.length + 4)
 
-  var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),

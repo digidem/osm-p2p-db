@@ -4,13 +4,14 @@ var fdstore = require('fd-chunk-store')
 var path = require('path')
 var memdb = require('memdb')
 var collect = require('collect-stream')
+var osmSetup = require('./osm-setup')
 
 var tmpdir = require('os').tmpdir()
 
 var osmdb = require('../')
 
 test('delete a node from a way + modify way to remove node', function (t) {
-  t.plan(19)
+  t.plan(13)
 
   var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
@@ -28,45 +29,10 @@ test('delete a node from a way + modify way to remove node', function (t) {
     F: { m: 'E', v: { type: 'way', refs: [ 'A', 'B', 'C' ] } },
     G: { d: 'D' }
   }
-  var names = {}
-  var nodes = {}
-  var versions = {}
 
-  var keys = Object.keys(docs).sort()
-  ;(function next () {
-    if (keys.length === 0) return ready()
-    var key = keys.shift()
-    var doc = docs[key]
-    if (doc.refs) {
-      doc.refs = doc.refs.map(function (ref) { return names[ref] })
-    }
-    if (doc.d) {
-      osm.del(names[doc.d], function (err, node) {
-        t.ifError(err)
-        versions[key] = node.key
-        nodes[doc.d] = node
-        next()
-      })
-    } else if (doc.m) {
-      doc.v.refs = doc.v.refs.map(function (ref) { return names[ref] })
-      osm.put(names[doc.m], doc.v, function (err, node) {
-        t.ifError(err)
-        versions[key] = node.key
-        nodes[names[doc.m]] = node
-        next()
-      })
-    } else {
-      osm.create(doc, function (err, k, node) {
-        t.ifError(err)
-        names[key] = k
-        versions[key] = node.key
-        nodes[k] = node
-        next()
-      })
-    }
-  })()
+  osmSetup(osm, docs, function (err, nodes, versions, names) {
+    t.ifError(err)
 
-  function ready () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
       { type: 'node', lat: 64.5, lon: -147.3,
@@ -116,7 +82,7 @@ test('delete a node from a way + modify way to remove node', function (t) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex2, 'empty coverage stream')
     })
-  }
+  })
 })
 
 test('delete a node from a way', function (t) {

@@ -4,13 +4,14 @@ var fdstore = require('fd-chunk-store')
 var path = require('path')
 var memdb = require('memdb')
 var collect = require('collect-stream')
+var osmSetup = require('./osm-setup')
 
 var tmpdir = require('os').tmpdir()
 
 var osmdb = require('../')
 
 test('del node', function (t) {
-  t.plan(7)
+  t.plan(5)
 
   var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
@@ -24,37 +25,10 @@ test('del node', function (t) {
     B: { type: 'node', lat: 63.9, lon: -147.6 },
     C: { d: 'A' }
   }
-  var names = {}
-  var nodes = {}
-  var versions = {}
 
-  var keys = Object.keys(docs).sort()
-  ;(function next () {
-    if (keys.length === 0) return ready()
-    var key = keys.shift()
-    var doc = docs[key]
-    if (doc.refs) {
-      doc.refs = doc.refs.map(function (ref) { return names[ref] })
-    }
-    if (doc.d) {
-      osm.del(names[doc.d], function (err, node) {
-        t.ifError(err)
-        versions[key] = node.key
-        nodes[doc.d] = node
-        next()
-      })
-    } else {
-      osm.create(doc, function (err, k, node) {
-        t.ifError(err)
-        names[key] = k
-        versions[key] = node.key
-        nodes[k] = node
-        next()
-      })
-    }
-  })()
+  osmSetup(osm, docs, function (err, nodes, versions, names) {
+    t.ifError(err)
 
-  function ready () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
       { type: 'node', lat: 63.9, lon: -147.6, id: names.B, version: versions.B },
@@ -68,7 +42,7 @@ test('del node', function (t) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
     })
-  }
+  })
 })
 
 function idcmp (a, b) {

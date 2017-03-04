@@ -3,13 +3,14 @@ var hyperlog = require('hyperlog')
 var fdstore = require('fd-chunk-store')
 var path = require('path')
 var memdb = require('memdb')
+var osmSetup = require('./osm-setup')
 
 var tmpdir = require('os').tmpdir()
 
 var osmdb = require('../')
 
 test('changeset', function (t) {
-  t.plan(15)
+  t.plan(9)
 
   var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
   var osm = osmdb({
@@ -28,31 +29,10 @@ test('changeset', function (t) {
     F: { type: 'changeset', tags: { comment: 'blah' } },
     G: { type: 'node', lat: 64.2, lon: -146.5, changeset: 'F' }
   }
-  var names = {}
-  var nodes = {}
-  var versions = {}
 
-  var keys = Object.keys(docs).sort()
-  ;(function next () {
-    if (keys.length === 0) return ready()
-    var key = keys.shift()
-    var doc = docs[key]
-    if (doc.refs) {
-      doc.refs = doc.refs.map(function (ref) { return names[ref] })
-    }
-    if (doc.changeset) {
-      doc.changeset = names[doc.changeset]
-    }
-    osm.create(doc, function (err, k, node) {
-      t.ifError(err)
-      names[key] = k
-      versions[key] = node.key
-      nodes[k] = node
-      next()
-    })
-  })()
+  osmSetup(osm, docs, function (err, nodes, versions, names) {
+    t.ifError(err)
 
-  function ready () {
     osm.getChanges(names.A, function (err, keys) {
       t.ifError(err)
       var expected = [ versions.B, versions.C, versions.D, versions.E ]
@@ -71,5 +51,5 @@ test('changeset', function (t) {
       t.ifError(err)
       t.equal(doc[Object.keys(doc)[0]].tags.comment, 'blah')
     })
-  }
+  })
 })
