@@ -63,8 +63,8 @@ function DB (opts) {
       var k = row.value.k, v = row.value.v || {}
       var d = row.value.d
       var ops = []
-      var next = after(function () {
-        cb(null, ops)
+      var next = after(function (err) {
+        cb(err, ops)
       })
 
       // Delete the old refs for this osm document ID
@@ -73,6 +73,7 @@ function DB (opts) {
       row.links.forEach(function (link) {
         var done = next()
         self.log.get(link, function (err, node) {
+          if (err) return done(err)
           if (node.value.v.refs) {
             for (var i = 0; i < node.value.v.refs.length; i++) {
               var ref = node.value.v.refs[i]
