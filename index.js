@@ -16,7 +16,7 @@ var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
 var defined = require('defined')
 var after = require('after-all')
-var mapLimit = require('map-limit')
+var mapLimit = require('async/mapLimit')
 
 module.exports = DB
 inherits(DB, EventEmitter)

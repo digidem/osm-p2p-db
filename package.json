@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "after-all": "^2.0.2",
+    "async": "^2.3.0",
     "base-convertor": "^1.1.0",
     "defined": "^1.0.0",
     "has": "^1.0.1",
@@ -33,7 +34,6 @@
     "hyperlog-kdb-index": "^4.0.0",
     "inherits": "^2.0.1",
     "kdb-tree-store": "^3.0.2",
-    "map-limit": "0.0.1",
     "mutexify": "^1.1.0",
     "once": "^1.3.3",
     "randombytes": "2.0.1",
