@@ -135,11 +135,12 @@ DB.prototype._getReferers = function (version, cb) {
 }
 
 DB.prototype.ready = function (cb) {
+  cb = once(cb || noop)
   var pending = 3
   this.refs.dex.ready(ready)
   this.kdb.ready(ready)
   this.changeset.dex.ready(ready)
-  function ready () { if (--pending === 0) cb() }
+  function ready () { if (--pending <= 0) cb() }
 }
 
 DB.prototype.create = function (value, opts, cb) {
@@ -277,6 +278,12 @@ DB.prototype.batch = function (rows, opts, cb) {
 
   var batch = []
   self.lock(function (release) {
+    var done = once(function () {
+      self.kv.batch(batch, opts, function (err, nodes) {
+        release(cb, err, nodes)
+      })
+    })
+
     var pending = 1 + rows.length
     rows.forEach(function (row) {
       var key = defined(row.key, row.id)
@@ -292,26 +299,20 @@ DB.prototype.batch = function (rows, opts, cb) {
 
       if (row.type === 'put') {
         batch.push(row)
-        if (--pending === 0) done()
+        if (--pending <= 0) done()
       } else if (row.type === 'del') {
         var xrow = xtend(opts, row)
         self._getDocumentDeletionBatchOps(key, xrow, function (err, xrows) {
           if (err) return release(cb, err)
           batch.push.apply(batch, xrows)
-          if (--pending === 0) done()
+          if (--pending <= 0) done()
         })
       } else {
         var err = new Error('unexpected row type: ' + row.type)
         process.nextTick(function () { release(cb, err) })
       }
     })
-    if (--pending === 0) done()
-
-    function done () {
-      self.kv.batch(batch, opts, function (err, nodes) {
-        release(cb, err, nodes)
-      })
-    }
+    if (--pending <= 0) done()
   })
 }
 
@@ -347,9 +348,18 @@ DB.prototype.query = function (q, opts, cb) {
   if (!opts) opts = {}
   cb = once(cb || noop)
   var res = []
+
+  var done = once(function () {
+    if (opts.order === 'type') {
+      res.sort(cmpType)
+    }
+    cb(null, res)
+  })
+
   self.ready(function () {
     self.kdb.query(q, opts, onquery)
   })
+
   function onquery (err, pts) {
     if (err) return cb(err)
     var pending = 1, seen = {}
@@ -359,16 +369,10 @@ DB.prototype.query = function (q, opts, cb) {
       self._collectNodeAndReferers(kdbPointToVersion(pt), seen, function (err, r) {
         if (err) return cb(err)
         if (r) res = res.concat(r)
-        if (--pending === 0) done()
+        if (--pending <= 0) done()
       })
     }
-    if (--pending === 0) done()
-  }
-  function done () {
-    if (opts.order === 'type') {
-      res.sort(cmpType)
-    }
-    cb(null, res)
+    if (--pending <= 0) done()
   }
 }
 var typeOrder = { node: 0, way: 1, relation: 2 }
@@ -433,11 +437,11 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
               Object.keys(docs).forEach(function (key) {
                 addDoc(node.value.k, key, docs[key])
               })
-              if (--pending === 0) cb(null, res)
+              if (--pending <= 0) cb(null, res)
             })
           }
         }
-        if (--pending === 0) cb(null, res)
+        if (--pending <= 0) cb(null, res)
       })
       pending++
       self._getReferers(link, function (err, links2) {
@@ -449,7 +453,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       })
     })
 
-    if (--pending === 0) cb(null, res)
+    if (--pending <= 0) cb(null, res)
   }
 
   function addDocFromNode (node) {
@@ -489,7 +493,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
             addDoc(ref, key, docs[key])
           })
         }
-        if (--pending === 0) cb(null, res)
+        if (--pending <= 0) cb(null, res)
       })
     })
   }
