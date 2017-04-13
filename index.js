@@ -3,7 +3,6 @@ var hyperkdb = require('hyperlog-kdb-index')
 var kdbtree = require('kdb-tree-store')
 var sub = require('subleveldown')
 var randomBytes = require('randombytes')
-var has = require('has')
 var once = require('once')
 var through = require('through2')
 var to = require('to2')
@@ -384,7 +383,7 @@ function cmpType (a, b) {
 DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
-  if (has(seenAccum, version)) return cb(null, [])
+  if (seenAccum[version]) return cb(null, [])
   var res = [], added = {}, pending = 1
 
   // Track the original node that came from the kdb query that brought us here,
@@ -403,21 +402,21 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
 
     // The original node has nothing referring to it, so it's a standalone node
     // on the map: add it.
-    if (links.length === 0 && selfNode && !has(seenAccum, selfNode.key)) {
+    if (links.length === 0 && selfNode && !seenAccum[selfNode.key]) {
       addDocFromNode(selfNode)
       seenAccum[selfNode.key] = true
     }
     selfNode = null
 
     links.forEach(function (link) {
-      if (has(seenAccum, link)) return
+      if (seenAccum[link]) return
       seenAccum[link] = true
       pending++
       self.log.get(link, function (err, node) {
         addDocFromNode(node)
         if (node && node.value && node.value.k && node.value.v) {
           // Add the original node if a referer is a relation.
-          if (originalNode && !has(seenAccum, originalNode.key) && node.value.v.type === 'relation') {
+          if (originalNode && !seenAccum[originalNode.key] && node.value.v.type === 'relation') {
             addDocFromNode(originalNode)
             seenAccum[originalNode.key] = true
             originalNode = null
@@ -453,7 +452,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   }
 
   function addDoc (id, version, doc) {
-    if (!has(added, version)) {
+    if (!added[version]) {
       doc = xtend(doc, {
         id: id,
         version: version
@@ -469,12 +468,12 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
 
   function addWayNodes (refs) {
     refs.forEach(function (ref) {
-      if (has(seenAccum, ref)) return
+      if (seenAccum[ref]) return
       seenAccum[ref] = true
       pending++
       self.get(ref, function (err, docs) {
         Object.keys(docs || {}).forEach(function (key) {
-          if (has(seenAccum, key)) return
+          if (seenAccum[key]) return
           seenAccum[key] = true
           addDoc(ref, key, docs[key])
         })
