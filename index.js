@@ -51,7 +51,6 @@ function DB (opts) {
         var pts = row.value.points.map(ptf)
         next(null, { type: 'put', points: pts })
       } else next()
-      function ptf (x) { return [ x.lat, x.lon ] }
     }
   })
   self.kdb.on('error', function (err) { self.emit('error', err) })
@@ -563,3 +562,6 @@ function mapObj (obj, fn) {
 function kdbPointToVersion (pt) {
   return pt.value.toString('hex')
 }
+
+// {lat: Number, lon: Number} -> [Number, Number]
+function ptf (x) { return [ x.lat, x.lon ] }
