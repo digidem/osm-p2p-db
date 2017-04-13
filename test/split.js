@@ -41,10 +41,21 @@ test('split', function (t) {
     var q = [[63,65],[-148,-145]]
     osm.query(q, function (err, res) {
       t.error(err)
-      var ids = res.map(function (r) { return r.id }).sort()
+      var docs = res.map(function (r) {
+        return [ r.id, !!r.deleted ]
+      })
+      docs.sort(function cmp (a, b) {
+        return a[0] < b[0] ? -1 : 1
+      })
       var rows = {}
       res.forEach(function (r) { rows[r.id] = r })
-      t.deepEqual(ids, ['B','C','E','F'])
+      t.deepEqual(docs, [
+        ['B', false],
+        ['C', false],
+        ['D', true],
+        ['E', false],
+        ['F', false]
+      ])
       t.deepEqual(rows.F.refs, ['B','C','E'])
     })
   }

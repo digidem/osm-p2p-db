@@ -30,6 +30,7 @@ test('del batch', function (t) {
     { type: 'del', key: 'D' }
   ]
   var versions = {}
+  var deletions = {}
   osm.batch(batch0, function (err, nodes) {
     t.error(err)
     nodes.forEach(function (node) {
@@ -37,6 +38,9 @@ test('del batch', function (t) {
     })
     osm.batch(batch1, function (err, nodes) {
       t.error(err)
+      nodes.forEach(function (node) {
+        deletions[node.value.d] = node.key
+      })
       ready()
     })
   })
@@ -49,6 +53,8 @@ test('del batch', function (t) {
         id: 'B', version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: 'C', version: versions.C },
+      { deleted: true, id: 'D', version: deletions.D },
+      { deleted: true, id: 'E', version: deletions.E },
       { type: 'way', refs: [ 'A', 'B', 'C' ],
         id: 'F', version: versions.F }
     ].sort(idcmp)
@@ -60,6 +66,7 @@ test('del batch', function (t) {
       t.error(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
     })
+
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
       { type: 'node', lat: 64.5, lon: -147.3,
@@ -68,6 +75,7 @@ test('del batch', function (t) {
         id: 'B', version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: 'C', version: versions.C },
+      { deleted: true, id: 'E', version: deletions.E },
       { type: 'way', refs: [ 'A', 'B', 'C' ],
         id: 'F', version: versions.F }
     ].sort(idcmp)

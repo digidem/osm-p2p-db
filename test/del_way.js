@@ -11,7 +11,8 @@ var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
 var osmdb = require('../')
 
 test('del way', function (t) {
-  t.plan(9)
+  t.plan(13)
+
   var osm = osmdb({
     log: hyperlog(memdb(), { valueEncoding: 'json' }),
     db: memdb(),
@@ -57,12 +58,7 @@ test('del way', function (t) {
   function ready () {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C }
+      { deleted: true, id: names.D, version: versions.E }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
@@ -71,6 +67,19 @@ test('del way', function (t) {
     collect(osm.queryStream(q0), function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
+    })
+
+    var q1 = [[63,64],[-148,-146]]
+    var ex1 = [
+      { deleted: true, id: names.D, version: versions.E }
+    ].sort(idcmp)
+    osm.query(q1, function (err, res) {
+      t.ifError(err)
+      t.deepEqual(res.sort(idcmp), ex0, 'partial coverage query')
+    })
+    collect(osm.queryStream(q1), function (err, res) {
+      t.ifError(err)
+      t.deepEqual(res.sort(idcmp), ex0, 'partial coverage stream')
     })
   }
 })

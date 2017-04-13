@@ -145,6 +145,47 @@ hyperlog to provide a value for the `version` property. This way, two versions
 of the same document will never have the same version unless they also have the
 exact same contents.
 
+### deletions
+
+Like OSM, documents in osm-p2p-db can be deleted. However, since hyperlog is an
+append-only data structure, true deletion of data cannot occur. Instead, a
+deleted document leaves behind a "tombstone", marking a particular OSM document
+as deleted.
+
+This happens via [hyperkv][12], which surfaces entries as either
+- `{ <key>: { value: <document> } }` or
+- `{ <key>: { deleted: true } }`
+
+Causality is maintained, meaning a deletion tombstone links backward to the
+document(s) that it is indicating a deletion of.
+
+### forks
+
+In a DAG with causal linking, such as hyperlog, history is non-linear. You might
+have a document that was edited or deleted on different machines before
+replicating to each other:
+
+```
+        /---- B <--- C <--- (del) <---\
+A <-----                               --- F
+        \---- E <---------------------/
+```
+
+Here, the original document (A) was edited twice and then deleted on one
+machine, and edited once on another machine. After both sets of modifications
+were replicated to a single machine, another edit (F) took place.
+
+This expression of data can be confusing when reasoning in the context of a
+linear-history system like OSM. There may not always be an obvious or
+unambiguous way of presenting the data that conforms with e.g. the OSM API,
+which assumes a linear history.
+
+osm-p2p-db embraces the forking, ambiguous nature of data inherent in a
+distributed system, and exposes it unfettered through its API. The
+responsibility of managing forks is left in the hands of downstream modules,
+which could employ a variety of different possible forms: automatic merging,
+presenting a conflict resolution user interface, or others.
+
 ### changesets
 
 Each element must refer to a pre-existing changeset. Changesets are a way to

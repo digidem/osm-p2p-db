@@ -38,7 +38,7 @@ test('del batch', function (t) {
     osm.batch(batch1, function (err, nodes) {
       t.error(err)
       nodes.forEach(function (node) {
-        versions[node.value.k] = node.key
+        versions[node.value.k || node.value.d] = node.key
       })
       ready()
     })
@@ -52,6 +52,7 @@ test('del batch', function (t) {
         id: 'B', version: versions.B },
       { type: 'node', lat: 64.2, lon: -146.5,
         id: 'C', version: versions.C },
+      { deleted: true, id: 'D', version: versions.D },
       { type: 'way', refs: [ 'A', 'B', 'C' ],
         id: 'F', version: versions.F }
     ].sort(idcmp)

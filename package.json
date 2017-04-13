@@ -25,9 +25,9 @@
   },
   "dependencies": {
     "after-all": "^2.0.2",
+    "async": "^2.3.0",
     "base-convertor": "^1.1.0",
     "defined": "^1.0.0",
-    "has": "^1.0.1",
     "hyperkv": "^2.0.1",
     "hyperlog-join": "^2.0.0",
     "hyperlog-kdb-index": "^4.0.0",

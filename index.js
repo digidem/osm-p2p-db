@@ -3,7 +3,6 @@ var hyperkdb = require('hyperlog-kdb-index')
 var kdbtree = require('kdb-tree-store')
 var sub = require('subleveldown')
 var randomBytes = require('randombytes')
-var has = require('has')
 var once = require('once')
 var through = require('through2')
 var to = require('to2')
@@ -16,6 +15,7 @@ var hex2dec = require('./lib/hex2dec.js')
 var lock = require('mutexify')
 var defined = require('defined')
 var after = require('after-all')
+var mapLimit = require('async/mapLimit')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -23,14 +23,18 @@ inherits(DB, EventEmitter)
 function DB (opts) {
   var self = this
   if (!(self instanceof DB)) return new DB(opts)
+
   self.log = opts.log
   self.db = opts.db
+
   self.kv = defined(opts.kv, hyperkv({
     log: self.log,
     db: sub(self.db, 'kv')
   }))
   self.kv.on('error', function (err) { self.emit('error', err) })
+
   self.lock = lock()
+
   self.kdb = hyperkdb({
     log: self.log,
     store: opts.store,
@@ -43,33 +47,37 @@ function DB (opts) {
       if (v && v.lat !== undefined && v.lon !== undefined) {
         next(null, { type: 'put', point: ptf(v) })
       } else if (d && Array.isArray(row.value.points)) {
-        next(null, { type: 'del', points: row.value.points.map(ptf) })
+        var pts = row.value.points.map(ptf)
+        next(null, { type: 'put', points: pts })
       } else next()
-      function ptf (x) { return [ x.lat, x.lon ] }
     }
   })
   self.kdb.on('error', function (err) { self.emit('error', err) })
+
   self.refs = join({
     log: self.log,
     db: sub(self.db, 'r'),
     map: function (row, cb) {
       if (!row.value) return
       var k = row.value.k, v = row.value.v || {}
+      var d = row.value.d
       var ops = []
-      var next = after(function () {
-        cb(null, ops)
+      var next = after(function (err) {
+        cb(err, ops)
       })
 
-      // Update refs
+      // Delete the old refs for this osm document ID
       var refs = v.refs || row.value.refs || []
       var members = v.members || row.value.members || []
       row.links.forEach(function (link) {
         var done = next()
         self.log.get(link, function (err, node) {
+          if (err) return done(err)
           if (node.value.v.refs) {
             for (var i = 0; i < node.value.v.refs.length; i++) {
               var ref = node.value.v.refs[i]
               ops.push({ type: 'del', key: ref, rowKey: link })
+              if (d) ops.push({ type: 'put', key: ref, value: d })
             }
           }
           if (node.value.v.members) {
@@ -78,11 +86,14 @@ function DB (opts) {
               if (typeof member === 'string') member = { ref: member }
               if (typeof member.ref !== 'string') return
               ops.push({ type: 'del', key: member.ref, rowKey: link })
+              if (d) ops.push({ type: 'put', key: member.ref, value: d })
             }
           }
           done()
         })
       })
+
+      // Write the new ref entries for this new osm document
       if (k) {
         for (var i = 0; i < refs.length; i++) {
           ops.push({ type: 'put', key: refs[i], value: k })
@@ -94,6 +105,7 @@ function DB (opts) {
     }
   })
   self.refs.on('error', function (err) { self.emit('error', err) })
+
   self.changeset = join({
     log: self.log,
     db: sub(self.db, 'c'),
@@ -107,11 +119,14 @@ function DB (opts) {
   self.changeset.on('error', function (err) { self.emit('error', err) })
 }
 
-DB.prototype._links = function (link, cb) {
+// Given the OsmVersion of a document, returns the OsmVersions of all documents
+// that reference it (non-recursively).
+// OsmVersion -> [OsmVersion]
+DB.prototype._getReferers = function (version, cb) {
   var self = this
-  self.log.get(link, function (err, doc) {
+  self.log.get(version, function (err, doc) {
     if (err) return cb(err)
-    self.refs.list(doc.value.k, function (err, rows) {
+    self.refs.list(doc.value.k || doc.value.d, function (err, rows) {
       if (err) cb(err)
       else cb(null, rows.map(keyf))
     })
@@ -120,11 +135,12 @@ DB.prototype._links = function (link, cb) {
 }
 
 DB.prototype.ready = function (cb) {
+  cb = once(cb || noop)
   var pending = 3
   this.refs.dex.ready(ready)
   this.kdb.ready(ready)
   this.changeset.dex.ready(ready)
-  function ready () { if (--pending === 0) cb() }
+  function ready () { if (--pending <= 0) cb() }
 }
 
 DB.prototype.create = function (value, opts, cb) {
@@ -164,31 +180,76 @@ DB.prototype.del = function (key, opts, cb) {
   }
   if (!opts) opts = {}
   cb = once(cb || noop)
-  self._del(key, opts, function (err, rows) {
-    if (err) return cb(err)
-    self.batch(rows, opts, function (err, nodes) {
-      if (err) cb(err)
-      else cb(null, nodes[0])
-    })
+
+  var rows = [
+    {
+      type: 'del',
+      key: key,
+      links: opts.links
+    }
+  ]
+
+  self.batch(rows, opts, function (err, nodes) {
+    if (err) cb(err)
+    else cb(null, nodes[0])
   })
 }
 
-DB.prototype._del = function (key, opts, cb) {
+// OsmId, Opts -> [OsmBatchOp]
+DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
   var self = this
-  self.kv.get(key, function (err, values) {
-    if (err) return cb(err)
-    // Filter deletions & map to old expected format.
-    values = filterObj(values, function (key, value) {
-      return !value.deleted
-    })
-    values = mapObj(values, function (key, value) {
-      return value.value
-    })
 
+  if (!opts || !opts.links) {
+    // Fetch all versions of the document ID
+    self.kv.get(id, function (err, docs) {
+      if (err) return cb(err)
+
+      docs = mapObj(docs, function (version, doc) {
+        if (doc.deleted) {
+          return {
+            id: id,
+            version: version,
+            deleted: true
+          }
+        } else {
+          return doc.value
+        }
+      })
+
+      handleLinks(docs)
+    })
+  } else {
+    // Fetch all versions of documents that match 'opts.links`.
+    mapLimit(opts.links, 10, linkToDocument, function (err, docList) {
+      if (err) return cb(err)
+      var docs = {}
+      docList.forEach(function (doc) {
+        docs[doc.version] = doc
+      })
+      handleLinks(docs)
+    })
+  }
+
+  function linkToDocument (link, done) {
+    self.log.get(link, function (err, node) {
+      if (err) return done(err)
+
+      done(null, node.value.d ? {
+        id: node.value.d,
+        version: node.key,
+        deleted: true
+      } : xtend(node.value.v, {
+        id: node.value.k,
+        version: node.key
+      }))
+    })
+  }
+
+  function handleLinks (docs) {
     var fields = {}
-    var links = opts.keys || Object.keys(values)
+    var links = Object.keys(docs)
     links.forEach(function (ln) {
-      var v = values[ln] || {}
+      var v = docs[ln] || {}
       if (v.lat !== undefined && v.lon !== undefined) {
         if (!fields.points) fields.points = []
         fields.points.push({ lat: v.lat, lon: v.lon })
@@ -197,9 +258,13 @@ DB.prototype._del = function (key, opts, cb) {
         if (!fields.refs) fields.refs = []
         fields.refs.push.apply(fields.refs, v.refs)
       }
+      if (Array.isArray(v.members)) {
+        if (!fields.members) fields.members = []
+        fields.members.push.apply(fields.members, v.members)
+      }
     })
-    cb(null, [ { type: 'del', key: key, links: links, fields: fields } ])
-  })
+    cb(null, [ { type: 'del', key: id, links: links, fields: fields } ])
+  }
 }
 
 DB.prototype.batch = function (rows, opts, cb) {
@@ -213,33 +278,41 @@ DB.prototype.batch = function (rows, opts, cb) {
 
   var batch = []
   self.lock(function (release) {
+    var done = once(function () {
+      self.kv.batch(batch, opts, function (err, nodes) {
+        release(cb, err, nodes)
+      })
+    })
+
     var pending = 1 + rows.length
     rows.forEach(function (row) {
       var key = defined(row.key, row.id)
       if (!key) {
         key = row.key = hex2dec(randomBytes(8).toString('hex'))
       }
+
+      if (row.links && !Array.isArray(row.links)) {
+        return cb(new Error('row has a "links" field that isnt an array'))
+      } else if (!row.links && row.links !== undefined) {
+        return cb(new Error('row has a "links" field that is non-truthy but not undefined'))
+      }
+
       if (row.type === 'put') {
         batch.push(row)
-        if (--pending === 0) done()
+        if (--pending <= 0) done()
       } else if (row.type === 'del') {
-        self._del(key, xtend(opts, row), function (err, xrows) {
+        var xrow = xtend(opts, row)
+        self._getDocumentDeletionBatchOps(key, xrow, function (err, xrows) {
           if (err) return release(cb, err)
           batch.push.apply(batch, xrows)
-          if (--pending === 0) done()
+          if (--pending <= 0) done()
         })
       } else {
         var err = new Error('unexpected row type: ' + row.type)
         process.nextTick(function () { release(cb, err) })
       }
     })
-    if (--pending === 0) done()
-
-    function done () {
-      self.kv.batch(batch, opts, function (err, nodes) {
-        release(cb, err, nodes)
-      })
-    }
+    if (--pending <= 0) done()
   })
 }
 
@@ -248,14 +321,18 @@ DB.prototype.get = function (key, opts, cb) {
     cb = opts
     opts = {}
   }
-  this.kv.get(key, opts, function (err, docs) {
+  this.kv.get(key, function (err, docs) {
     if (err) return cb(err)
-    // Filter deletions & map to old expected format.
-    docs = filterObj(docs, function (key, value) {
-      return !value.deleted
-    })
-    docs = mapObj(docs, function (key, value) {
-      return value.value
+    docs = mapObj(docs, function (version, doc) {
+      if (doc.deleted) {
+        return {
+          id: key,
+          version: version,
+          deleted: true
+        }
+      } else {
+        return doc.value
+      }
     })
 
     cb(null, docs)
@@ -271,26 +348,31 @@ DB.prototype.query = function (q, opts, cb) {
   if (!opts) opts = {}
   cb = once(cb || noop)
   var res = []
-  self.ready(function () {
-    self.kdb.query(q, opts, onquery)
-  })
-  function onquery (err, pts) {
-    if (err) return cb(err)
-    var pending = 1, seen = {}
-    pts.forEach(function (pt) {
-      pending++
-      self._onpt(pt, seen, function (err, r) {
-        if (r) res = res.concat(r)
-        if (--pending === 0) done()
-      })
-    })
-    if (--pending === 0) done()
-  }
-  function done () {
+
+  var done = once(function () {
     if (opts.order === 'type') {
       res.sort(cmpType)
     }
     cb(null, res)
+  })
+
+  self.ready(function () {
+    self.kdb.query(q, opts, onquery)
+  })
+
+  function onquery (err, pts) {
+    if (err) return cb(err)
+    var pending = 1, seen = {}
+    for (var i = 0; i < pts.length; i++) {
+      var pt = pts[i]
+      pending++
+      self._collectNodeAndReferers(kdbPointToVersion(pt), seen, function (err, r) {
+        if (err) return cb(err)
+        if (r) res = res.concat(r)
+        if (--pending <= 0) done()
+      })
+    }
+    if (--pending <= 0) done()
   }
 }
 var typeOrder = { node: 0, way: 1, relation: 2 }
@@ -298,71 +380,120 @@ function cmpType (a, b) {
   return typeOrder[a.type] - typeOrder[b.type]
 }
 
-DB.prototype._onpt = function (pt, seen, cb) {
+// Given a node by its version, this collects the node itself, and also
+// recursively climbs all ways and relations that the node (or its referers)
+// are referred to by.
+// OsmVersion, { OsmVersion: Boolean } -> [OsmDocument]
+DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
-  var link = pt.value.toString('hex')
-  if (has(seen, link)) return cb(null, [])
-  seen[link] = true
-  var res = [], added = {}, pending = 2
-  self.log.get(link, function (err, doc) {
-    if (doc && doc.value && doc.value.k && doc.value.v) {
-      addDoc(doc.value.k, link, doc.value.v)
+  if (seenAccum[version]) return cb(null, [])
+  var res = [], added = {}, pending = 1
+
+  // Track the original node that came from the kdb query that brought us here,
+  // but don't add it yet. There are certain conditions (e.g. there is only one
+  // way containing us, and it's deleted) where the node would not be returned.
+  var selfNode
+  var originalNode
+  self.log.get(version, function (err, node) {
+    // TODO: handle error
+    if (!err) {
+      selfNode = node
+      originalNode = node
     }
-    if (--pending === 0) cb(null, res)
-  })
-  self._links(link, function onlinks (err, links) {
-    if (!links) links = []
-    links.forEach(function (link) {
-      if (has(seen, link)) return
-      seen[link] = true
-      pending++
-      self.log.get(link, function (err, doc) {
-        if (doc && doc.value && doc.value.k && doc.value.v) {
-          pending++
-          self.get(doc.value.k, function (err, xdocs) {
-            if (err) return cb(err)
-            Object.keys(xdocs).forEach(function (key) {
-              addDoc(doc.value.k, key, xdocs[key])
-            })
-            if (--pending === 0) cb(null, res)
-          })
-        }
-        addDoc(doc.value.k, link, doc.value.v)
-        if (--pending === 0) cb(null, res)
-      })
-      pending++
-      self._links(link, function (err, links) {
-        onlinks(err, links)
-      })
-    })
-    if (--pending === 0) cb(null, res)
+    self._getReferers(version, onLinks)
   })
 
-  function addDoc (id, key, doc) {
-    if (!added.hasOwnProperty(key)) {
-      res.push(xtend(doc, {
-        id: id,
-        version: key
-      }))
-      added[key] = true
+  function onLinks (err, links) {
+    if (!links) links = []
+
+    // The original node has nothing referring to it, so it's a standalone node
+    // on the map: add it.
+    if (links.length === 0 && selfNode && !seenAccum[selfNode.key]) {
+      addDocFromNode(selfNode)
+      seenAccum[selfNode.key] = true
     }
+    selfNode = null
+
+    links.forEach(function (link) {
+      if (seenAccum[link]) return
+      seenAccum[link] = true
+      pending++
+      self.log.get(link, function (err, node) {
+        // TODO: handle error
+        if (!err) {
+          addDocFromNode(node)
+          if (node && node.value && node.value.k && node.value.v) {
+            // Add the original node if a referer is a relation.
+            if (originalNode && !seenAccum[originalNode.key] && node.value.v.type === 'relation') {
+              addDocFromNode(originalNode)
+              seenAccum[originalNode.key] = true
+              originalNode = null
+            }
+
+            pending++
+            self.get(node.value.k, function (err, docs) {
+              if (err) return cb(err)
+              Object.keys(docs).forEach(function (key) {
+                addDoc(node.value.k, key, docs[key])
+              })
+              if (--pending <= 0) cb(null, res)
+            })
+          }
+        }
+        if (--pending <= 0) cb(null, res)
+      })
+      pending++
+      self._getReferers(link, function (err, links2) {
+        // TODO: handle error
+        if (!err) {
+          originalNode = null
+          onLinks(err, links2)
+        }
+      })
+    })
+
+    if (--pending <= 0) cb(null, res)
+  }
+
+  function addDocFromNode (node) {
+    if (node && node.value && node.value.k && node.value.v) {
+      addDoc(node.value.k, node.key, node.value.v)
+    } else if (node && node.value && node.value.d) {
+      addDoc(node.value.d, node.key, {deleted: true})
+    }
+  }
+
+  function addDoc (id, version, doc) {
+    if (!added[version]) {
+      doc = xtend(doc, {
+        id: id,
+        version: version
+      })
+      res.push(doc)
+      added[version] = true
+    }
+
     if (doc && Array.isArray(doc.refs || doc.nodes)) {
       addWayNodes(doc.refs || doc.nodes)
     }
   }
+
   function addWayNodes (refs) {
     refs.forEach(function (ref) {
-      if (has(seen, ref)) return
-      seen[ref] = true
+      if (seenAccum[ref]) return
+      seenAccum[ref] = true
       pending++
       self.get(ref, function (err, docs) {
-        Object.keys(docs || {}).forEach(function (key) {
-          if (has(seen, key)) return
-          seen[key] = true
-          addDoc(ref, key, docs[key])
-        })
-        if (--pending === 0) cb(null, res)
+        // TODO: handle error
+        if (!err) {
+          Object.keys(docs || {}).forEach(function (key) {
+            if (seenAccum[key]) return
+            seenAccum[key] = true
+            addDoc(ref, key, docs[key])
+          })
+        }
+        if (--pending <= 0) cb(null, res)
       })
     })
   }
@@ -385,7 +516,8 @@ DB.prototype.queryStream = function (q, opts) {
   function write (row, enc, next) {
     next = once(next)
     var tr = this
-    self._onpt(row, seen, function (err, res) {
+    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+      if (err) return next()
       if (res) res.forEach(function (r) {
         tr.push(r)
       })
@@ -395,7 +527,8 @@ DB.prototype.queryStream = function (q, opts) {
   function writeType (row, enc, next) {
     next = once(next)
     var tr = this
-    self._onpt(row, seen, function (err, res) {
+    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+      if (err) return next()
       if (res) res.forEach(function (r) {
         if (r.type === 'node') tr.push(r)
         else queue.push(r)
@@ -440,6 +573,7 @@ function collectObj (stream, cb) {
   function end () { cb(null, rows) }
 }
 
+// Object, (k, v -> v) -> Object
 function mapObj (obj, fn) {
   Object.keys(obj).forEach(function (key) {
     obj[key] = fn(key, obj[key])
@@ -447,12 +581,10 @@ function mapObj (obj, fn) {
   return obj
 }
 
-function filterObj (obj, fn) {
-  var res = {}
-  Object.keys(obj).forEach(function (key) {
-    if (fn(key, obj[key])) {
-      res[key] = obj[key]
-    }
-  })
-  return res
+// KdbPoint -> OsmVersion
+function kdbPointToVersion (pt) {
+  return pt.value.toString('hex')
 }
+
+// {lat: Number, lon: Number} -> [Number, Number]
+function ptf (x) { return [ x.lat, x.lon ] }
