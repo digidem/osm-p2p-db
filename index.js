@@ -185,7 +185,7 @@ DB.prototype.del = function (key, opts, cb) {
     {
       type: 'del',
       key: key,
-      links: opts.links || undefined
+      links: opts.links
     }
   ]
 
@@ -284,6 +284,13 @@ DB.prototype.batch = function (rows, opts, cb) {
       if (!key) {
         key = row.key = hex2dec(randomBytes(8).toString('hex'))
       }
+
+      if (row.links && !Array.isArray(row.links)) {
+        return cb(new Error('row has a "links" field that isnt an array'))
+      } else if (!row.links && row.links !== undefined) {
+        return cb(new Error('row has a "links" field that is non-truthy but not undefined'))
+      }
+
       if (row.type === 'put') {
         batch.push(row)
         if (--pending === 0) done()
