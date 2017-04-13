@@ -392,8 +392,11 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   var selfNode
   var originalNode
   self.log.get(version, function (err, node) {
-    selfNode = node
-    originalNode = node
+    // TODO: handle error
+    if (!err) {
+      selfNode = node
+      originalNode = node
+    }
     self._getReferers(version, onLinks)
   })
 
@@ -413,30 +416,36 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       seenAccum[link] = true
       pending++
       self.log.get(link, function (err, node) {
-        addDocFromNode(node)
-        if (node && node.value && node.value.k && node.value.v) {
-          // Add the original node if a referer is a relation.
-          if (originalNode && !seenAccum[originalNode.key] && node.value.v.type === 'relation') {
-            addDocFromNode(originalNode)
-            seenAccum[originalNode.key] = true
-            originalNode = null
-          }
+        // TODO: handle error
+        if (!err) {
+          addDocFromNode(node)
+          if (node && node.value && node.value.k && node.value.v) {
+            // Add the original node if a referer is a relation.
+            if (originalNode && !seenAccum[originalNode.key] && node.value.v.type === 'relation') {
+              addDocFromNode(originalNode)
+              seenAccum[originalNode.key] = true
+              originalNode = null
+            }
 
-          pending++
-          self.get(node.value.k, function (err, docs) {
-            if (err) return cb(err)
-            Object.keys(docs).forEach(function (key) {
-              addDoc(node.value.k, key, docs[key])
+            pending++
+            self.get(node.value.k, function (err, docs) {
+              if (err) return cb(err)
+              Object.keys(docs).forEach(function (key) {
+                addDoc(node.value.k, key, docs[key])
+              })
+              if (--pending === 0) cb(null, res)
             })
-            if (--pending === 0) cb(null, res)
-          })
+          }
         }
         if (--pending === 0) cb(null, res)
       })
       pending++
       self._getReferers(link, function (err, links2) {
-        originalNode = null
-        onLinks(err, links2)
+        // TODO: handle error
+        if (!err) {
+          originalNode = null
+          onLinks(err, links2)
+        }
       })
     })
 
@@ -472,11 +481,14 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
       seenAccum[ref] = true
       pending++
       self.get(ref, function (err, docs) {
-        Object.keys(docs || {}).forEach(function (key) {
-          if (seenAccum[key]) return
-          seenAccum[key] = true
-          addDoc(ref, key, docs[key])
-        })
+        // TODO: handle error
+        if (!err) {
+          Object.keys(docs || {}).forEach(function (key) {
+            if (seenAccum[key]) return
+            seenAccum[key] = true
+            addDoc(ref, key, docs[key])
+          })
+        }
         if (--pending === 0) cb(null, res)
       })
     })
