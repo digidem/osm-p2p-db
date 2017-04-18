@@ -587,4 +587,6 @@ function kdbPointToVersion (pt) {
 }
 
 // {lat: Number, lon: Number} -> [Number, Number]
-function ptf (x) { return [ x.lat, x.lon ] }
+function ptf (x) {
+  return [ Number(x.lat), Number(x.lon) ]
+}
