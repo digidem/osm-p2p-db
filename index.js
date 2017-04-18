@@ -40,7 +40,7 @@ function DB (opts) {
     store: opts.store,
     db: sub(self.db, 'kdb'),
     kdbtree: kdbtree,
-    types: [ 'float', 'float' ],
+    types: [ 'float64', 'float64' ],
     map: function (row, next) {
       if (!row.value) return null
       var v = row.value.v, d = row.value.d
