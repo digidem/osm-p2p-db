@@ -16,6 +16,7 @@ var lock = require('mutexify')
 var defined = require('defined')
 var after = require('after-all')
 var mapLimit = require('async/mapLimit')
+var afterAll = require('after-all')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -428,12 +429,31 @@ function cmpType (a, b) {
 // Given a node by its version, this collects the node itself, and also
 // recursively climbs all ways and relations that the node (or its referers)
 // are referred to by.
+//
+// Guarantees that each document is only returned once, and that all heads for
+// a given document ID are returned in succession. This allows for efficient
+// document filtering.
+//
 // OsmVersion, { OsmVersion: Boolean } -> [OsmDocument]
 DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
   if (seenAccum[version]) return cb(null, [])
   var res = [], added = {}, pending = 1
+
+  var after = afterAll()
+
+  addAllDocHeadsByVersion(version, after())
+
+  function addAllDocHeadsByVersion (version, done) {
+    self.log.get(version, function (err, node) {
+      if (!err) {
+        addDocHeads(node.value.k || node.value.d, done)
+      } else {
+        done()
+      }
+    })
+  }
 
   // Track the original node that came from the kdb query that brought us here,
   // but don't add it yet. There are certain conditions (e.g. there is only one
@@ -509,19 +529,27 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
     }
   }
 
-  function addDoc (id, version, doc) {
-    if (!added[version]) {
-      doc = xtend(doc, {
-        id: id,
-        version: version
-      })
-      res.push(doc)
-      added[version] = true
-    }
+  // Add all heads of doc=id to the result list.
+  function addDocHeads (id, done) {
+    if (added[id]) return done()
+    added[id] = true
 
-    if (doc && Array.isArray(doc.refs || doc.nodes)) {
-      addWayNodes(doc.refs || doc.nodes)
-    }
+    self.get(id, function (err, heads) {
+      if (!err) {
+        var ids = Object.keys(heads)
+        ids.forEach(function (version) {
+          var doc = xtend(heads[version], {
+            id: id,
+            version: version
+          })
+          res.push(doc)
+
+          if (Array.isArray(doc.refs || doc.nodes)) {
+            addWayNodes(doc.refs || doc.nodes)
+          }
+        })
+      }
+    })
   }
 
   function addWayNodes (refs) {
