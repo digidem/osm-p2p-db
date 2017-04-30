@@ -375,6 +375,51 @@ DB.prototype.query = function (q, opts, cb) {
     if (--pending <= 0) done()
   }
 }
+
+DB.prototype.queryStream = function (q, opts) {
+  var self = this
+  if (!opts) opts = {}
+  var stream = opts.order === 'type'
+    ? through.obj(writeType, endType)
+    : through.obj(write)
+  var seen = {}, queue = []
+  self.ready(function () {
+    var r = self.kdb.queryStream(q, opts)
+    r.on('error', stream.emit.bind(stream, 'error'))
+    r.pipe(stream)
+  })
+  return readonly(stream)
+
+  function write (row, enc, next) {
+    next = once(next)
+    var tr = this
+    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+      if (err) return next()
+      if (res) res.forEach(function (r) {
+        tr.push(r)
+      })
+      next()
+    })
+  }
+  function writeType (row, enc, next) {
+    next = once(next)
+    var tr = this
+    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+      if (err) return next()
+      if (res) res.forEach(function (r) {
+        if (r.type === 'node') tr.push(r)
+        else queue.push(r)
+      })
+      next()
+    })
+  }
+  function endType (next) {
+    var tr = this
+    queue.sort(cmpType).forEach(function (q) { tr.push(q) })
+    next()
+  }
+}
+
 var typeOrder = { node: 0, way: 1, relation: 2 }
 function cmpType (a, b) {
   return typeOrder[a.type] - typeOrder[b.type]
@@ -496,50 +541,6 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
         if (--pending <= 0) cb(null, res)
       })
     })
-  }
-}
-
-DB.prototype.queryStream = function (q, opts) {
-  var self = this
-  if (!opts) opts = {}
-  var stream = opts.order === 'type'
-    ? through.obj(writeType, endType)
-    : through.obj(write)
-  var seen = {}, queue = []
-  self.ready(function () {
-    var r = self.kdb.queryStream(q, opts)
-    r.on('error', stream.emit.bind(stream, 'error'))
-    r.pipe(stream)
-  })
-  return readonly(stream)
-
-  function write (row, enc, next) {
-    next = once(next)
-    var tr = this
-    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
-      if (err) return next()
-      if (res) res.forEach(function (r) {
-        tr.push(r)
-      })
-      next()
-    })
-  }
-  function writeType (row, enc, next) {
-    next = once(next)
-    var tr = this
-    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
-      if (err) return next()
-      if (res) res.forEach(function (r) {
-        if (r.type === 'node') tr.push(r)
-        else queue.push(r)
-      })
-      next()
-    })
-  }
-  function endType (next) {
-    var tr = this
-    queue.sort(cmpType).forEach(function (q) { tr.push(q) })
-    next()
   }
 }
 
