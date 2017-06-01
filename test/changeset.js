@@ -1,23 +1,10 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('changeset', function (t) {
   t.plan(15)
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile),
-    size: 4096
-  })
+  var osm = makeOsm()
   var docs = {
     A: { type: 'changeset', tags: { comment: 'whatever' } },
     B: { type: 'node', lat: 64.5, lon: -147.3, changeset: 'A' },
@@ -33,7 +20,7 @@ test('changeset', function (t) {
 
   var keys = Object.keys(docs).sort()
   ;(function next () {
-    if (keys.length === 0) return ready()
+    if (keys.length === 0) return osm.ready(ready)
     var key = keys.shift()
     var doc = docs[key]
     if (doc.refs) {

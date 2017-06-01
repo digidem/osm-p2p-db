@@ -1,14 +1,6 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('relations of relations', function (t) {
   var docs = {
@@ -39,17 +31,13 @@ test('relations of relations', function (t) {
   var keys = Object.keys(docs).sort()
   t.plan(keys.length + 4)
 
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var names = {}
   var nodes = {}
   var versions = {}
 
   ;(function next () {
-    if (keys.length === 0) return ready()
+    if (keys.length === 0) return osm.ready(ready)
     var key = keys.shift()
     var doc = docs[key]
     if (doc.refs) {

@@ -1,22 +1,10 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('delete a node from a way + modify way to remove node', function (t) {
   t.plan(19)
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },
@@ -32,7 +20,7 @@ test('delete a node from a way + modify way to remove node', function (t) {
 
   var keys = Object.keys(docs).sort()
   ;(function next () {
-    if (keys.length === 0) return ready()
+    if (keys.length === 0) return osm.ready(ready)
     var key = keys.shift()
     var doc = docs[key]
     if (doc.refs) {
@@ -119,11 +107,7 @@ test('delete a node from a way + modify way to remove node', function (t) {
 
 test('delete a node from a way', function (t) {
   t.plan(18)
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },
@@ -138,7 +122,7 @@ test('delete a node from a way', function (t) {
 
   var keys = Object.keys(docs).sort()
   ;(function next () {
-    if (keys.length === 0) return ready()
+    if (keys.length === 0) return osm.ready(ready)
     var key = keys.shift()
     var doc = docs[key]
     if (doc.refs) {

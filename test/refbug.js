@@ -1,24 +1,13 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var memdb = require('memdb')
-var path = require('path')
-var fdstore = require('fd-chunk-store')
 var data = require('./data/refbug.json')
-var osmdb = require('../')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
+var makeOsm = require('./create_db')
 
 test('refbug', function (t) {
   t.plan(data.length + 5)
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var nodes = [], docs = {}, deletions = {}
   ;(function next () {
-    if (data.length === 0) return ready()
+    if (data.length === 0) return osm.ready(ready)
     var row = data.shift()
     var prev = docs[row.key]
     var p = prev && prev[prev.length-1]
@@ -72,11 +61,7 @@ test('refbug', function (t) {
 })
 
 test('refbug 2: nodes referred to by old versions of a way are retained', function (t) {
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
 
   var batch = [
     { type: 'put', key: 'A', value: { type: 'node', lat: 64.5, lon: -147.3 } },
@@ -145,11 +130,7 @@ test('refbug 2: nodes referred to by old versions of a way are retained', functi
 })
 
 test('refbug 2: ways referred to by old versions of a relation are retained', function (t) {
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
 
   var batch = [
     { type: 'put', key: 'A', value: { type: 'node', lat: 64.5, lon: -147.3 } },
