@@ -1,14 +1,6 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('batch relation of ways', function (t) {
   t.plan(5)
@@ -27,13 +19,13 @@ test('batch relation of ways', function (t) {
       { type: 'node', ref: 'G' }
     ] } }
   ]
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   osm.batch(batch, function (err) {
     t.error(err)
+    osm.ready(query)
+  })
+
+  function query () {
     var q0 = [[62,63],[-145.5,-144.5]]
     var ex0 = [
       { type: 'node', lat: 62.1, lon: -145.1, id: 'E' },
@@ -56,7 +48,7 @@ test('batch relation of ways', function (t) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp).map(nover), ex0, 'relation of ways stream')
     })
-  })
+  }
 })
 
 function idcmp (a, b) {

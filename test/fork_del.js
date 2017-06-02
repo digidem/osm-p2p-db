@@ -1,14 +1,6 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 //       /-- A1 <--\
 // A <---           --- (deletion)
@@ -16,11 +8,7 @@ var osmdb = require('../')
 test('forked node /w merging delete', function (t) {
   t.plan(13)
 
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
 
   var A = { type: 'node', lat: 0, lon: 0 }
   var A1 = { type: 'node', lat: 1, lon: 1 }
@@ -46,7 +34,7 @@ test('forked node /w merging delete', function (t) {
             var doc = docs[delNode.key]
             t.equals(doc.deleted, true)
             t.equals(doc.id, id)
-            query()
+            osm.ready(query)
           })
         })
       })

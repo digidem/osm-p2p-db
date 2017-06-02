@@ -1,23 +1,11 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('del relation', function (t) {
   t.plan(10)
 
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },
@@ -32,7 +20,7 @@ test('del relation', function (t) {
 
   var keys = Object.keys(docs).sort()
   ;(function next () {
-    if (keys.length === 0) return ready()
+    if (keys.length === 0) return osm.ready(ready)
     var key = keys.shift()
     var doc = docs[key]
     if (doc.refs) {
@@ -86,11 +74,7 @@ test('del relation', function (t) {
 test('del relation in relation', function (t) {
   t.plan(11)
 
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var docs = {
     A: { type: 'node', lat: 64.5, lon: -147.3 },
     B: { type: 'node', lat: 63.9, lon: -147.6 },

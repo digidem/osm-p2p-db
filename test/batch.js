@@ -1,22 +1,10 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('create 3 nodes and a way', function (t) {
   t.plan(13)
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var rows = [
     { type: 'put', key: 'A', value: { type: 'node', lat: 64.5, lon: -147.3 } },
     { type: 'put', key: 'B', value: { type: 'node', lat: 63.9, lon: -147.6 } },
@@ -25,6 +13,11 @@ test('create 3 nodes and a way', function (t) {
   ]
   osm.batch(rows, function (err, nodes) {
     t.error(err)
+
+    osm.ready(function () { check(nodes) })
+  })
+
+  function check (nodes) {
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
       { type: 'node', lat: 64.5, lon: -147.3,
@@ -36,7 +29,6 @@ test('create 3 nodes and a way', function (t) {
       { type: 'way', refs: [ 'A', 'B', 'C' ],
         id: 'D', version: nodes[3].key }
     ].sort(idcmp)
-
     osm.query(q0, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage query')
@@ -74,7 +66,7 @@ test('create 3 nodes and a way', function (t) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex2, 'empty coverage stream')
     })
-  })
+  }
 })
 
 function idcmp (a, b) {

@@ -1,22 +1,10 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('ordered types - node in bbox returns linked way and refs nodes', function (t) {
   t.plan(7)
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var rows = [
     { type: 'put', key: 'A', value: { type: 'node', lat: 1.1, lon: 1.1 } },
     { type: 'put', key: 'B', value: { type: 'node', lat: 2.1, lon: 2.1 } },
@@ -25,6 +13,10 @@ test('ordered types - node in bbox returns linked way and refs nodes', function 
   ]
   osm.batch(rows, function (err, nodes) {
     t.error(err)
+    osm.ready(function () { query(nodes) })
+  })
+
+  function query (nodes) {
     var q0 = [[1,2],[1,2]]
     var ext0 = [ 'node', 'node', 'node', 'way' ]
     var ex0 = [
@@ -48,7 +40,7 @@ test('ordered types - node in bbox returns linked way and refs nodes', function 
       t.deepEqual(res.map(type), ext0, 'types')
       t.deepEqual(res.sort(idcmp), ex0, 'results')
     })
-  })
+  }
 })
 
 function type (x) { return x.type }

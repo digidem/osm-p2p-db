@@ -1,22 +1,10 @@
 var test = require('tape')
-var hyperlog = require('hyperlog')
-var fdstore = require('fd-chunk-store')
-var path = require('path')
-var memdb = require('memdb')
 var collect = require('collect-stream')
-
-var tmpdir = require('os').tmpdir()
-var storefile = path.join(tmpdir, 'osm-store-' + Math.random())
-
-var osmdb = require('../')
+var makeOsm = require('./create_db')
 
 test('modify way', function (t) {
   t.plan(14)
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
   var docs = [
     { id: 'A', type: 'node', lat: 64.5, lon: -147.3 },
     { id: 'B', type: 'node', lat: 63.9, lon: -147.6 },
@@ -32,7 +20,7 @@ test('modify way', function (t) {
   var deletions = {}
 
   ;(function next () {
-    if (docs.length === 0) return ready()
+    if (docs.length === 0) return osm.ready(ready)
     var doc = docs.shift()
     var key = doc.id
     delete doc.id
