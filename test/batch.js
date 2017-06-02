@@ -14,7 +14,7 @@ test('create 3 nodes and a way', function (t) {
   osm.batch(rows, function (err, nodes) {
     t.error(err)
 
-    osm.ready(() => { check(nodes) })
+    osm.ready(function () { check(nodes) })
   })
 
   function check (nodes) {

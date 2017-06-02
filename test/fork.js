@@ -18,7 +18,7 @@ test('fork', function (t) {
 
   var keys = Object.keys(docs).sort()
   ;(function next () {
-    if (keys.length === 0) return osm0.ready(() => osm1.ready(ready))
+    if (keys.length === 0) return osm0.ready(function () { osm1.ready(ready) })
     var key = keys.shift()
     var doc = docs[key]
     if (doc.refs) {

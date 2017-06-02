@@ -13,7 +13,7 @@ test('ordered types - node in bbox returns linked way and refs nodes', function 
   ]
   osm.batch(rows, function (err, nodes) {
     t.error(err)
-    osm.ready(() => query(nodes))
+    osm.ready(function () { query(nodes) })
   })
 
   function query (nodes) {
