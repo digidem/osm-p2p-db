@@ -26,6 +26,7 @@ function DB (opts) {
 
   self.log = opts.log
   self.db = opts.db
+  self.store = opts.store
 
   self.kv = defined(opts.kv, hyperkv({
     log: self.log,
@@ -37,7 +38,7 @@ function DB (opts) {
 
   self.kdb = hyperkdb({
     log: self.log,
-    store: opts.store,
+    store: self.store,
     db: sub(self.db, 'kdb'),
     kdbtree: kdbtree,
     types: [ 'float64', 'float64' ],
