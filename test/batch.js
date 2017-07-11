@@ -3,7 +3,7 @@ var collect = require('collect-stream')
 var makeOsm = require('./create_db')
 
 test('create 3 nodes and a way', function (t) {
-  t.plan(13)
+  t.plan(14)
   var osm = makeOsm()
   var rows = [
     { type: 'put', key: 'A', value: { type: 'node', lat: 64.5, lon: -147.3 } },
@@ -18,6 +18,7 @@ test('create 3 nodes and a way', function (t) {
   })
 
   function check (nodes) {
+    var pending = 6
     var q0 = [[63,65],[-148,-146]]
     var ex0 = [
       { type: 'node', lat: 64.5, lon: -147.3,
@@ -32,10 +33,12 @@ test('create 3 nodes and a way', function (t) {
     osm.query(q0, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage query')
+      if (--pending === 0) cleanup()
     })
     collect(osm.queryStream(q0), function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
+      if (--pending === 0) cleanup()
     })
     var q1 = [[62,64],[-149.5,-147.5]]
     var ex1 = [
@@ -51,21 +54,31 @@ test('create 3 nodes and a way', function (t) {
     osm.query(q1, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage query')
+      if (--pending === 0) cleanup()
     })
     collect(osm.queryStream(q1), function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')
+      if (--pending === 0) cleanup()
     })
     var q2 = [[62,64],[-147,-145]]
     var ex2 = []
     osm.query(q2, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex2, 'empty coverage query')
+      if (--pending === 0) cleanup()
     })
     collect(osm.queryStream(q2), function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex2, 'empty coverage stream')
+      if (--pending === 0) cleanup()
     })
+
+    function cleanup () {
+      osm.close(function () {
+        t.ok(true)
+      })
+    }
   }
 })
 
