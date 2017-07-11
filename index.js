@@ -560,6 +560,22 @@ DB.prototype.getChanges = function (key, opts, cb) {
   }
 }
 
+DB.prototype.close = function (cb) {
+  this.db.close(onDone)
+  this.log.db.close(onDone)
+  this.store.close(onDone) // TODO: investigate fd-chunk-store (or deferred-chunk-store) not calling its cb on 'close'
+
+  var pending = 3
+  function onDone (err) {
+    if (err) {
+      pending = Infinity
+      cb(err)
+    } else if (--pending === 0) {
+      cb()
+    }
+  }
+}
+
 function noop () {}
 
 function collectObj (stream, cb) {
