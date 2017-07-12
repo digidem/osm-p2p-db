@@ -140,8 +140,7 @@ test('delete a fork', function (t) {
   function ready () {
     osm.refs.list('A', function (err, refs) {
       t.error(err)
-      // TODO: change this if we change deleted fork join behaviour
-      t.deepEqual(refs.map(mapKeys), [ways[2]], 'A referenced by way2')
+      t.deepEqual(refs.map(mapKeys).sort(), [ways[3], ways[2]].sort(), 'A referenced by way2')
     })
     osm.refs.list('B', function (err, refs) {
       t.error(err)
@@ -149,8 +148,7 @@ test('delete a fork', function (t) {
     })
     osm.refs.list('C', function (err, refs) {
       t.error(err)
-      // TODO: change this if we change deleted join behaviour
-      t.deepEqual(refs.map(mapKeys), [], 'C no longer referenced')
+      t.deepEqual(refs.map(mapKeys), [ways[3]], 'C no longer referenced')
     })
     osm.refs.list('D', function (err, refs) {
       t.error(err)
@@ -163,6 +161,7 @@ test('delete way completely', function (t) {
   t.plan(9)
   osm.del('F', function (err, doc) {
     t.error(err)
+    ways[4] = doc.key
     osm.ready(ready)
   })
   /**
@@ -173,7 +172,7 @@ test('delete way completely', function (t) {
   function ready () {
     osm.refs.list('A', function (err, refs) {
       t.error(err)
-      t.deepEqual(refs.map(mapKeys), [], 'A no longer referenced')
+      t.deepEqual(refs.map(mapKeys), [ways[4]], 'A no longer referenced')
     })
     osm.refs.list('B', function (err, refs) {
       t.error(err)
@@ -181,11 +180,11 @@ test('delete way completely', function (t) {
     })
     osm.refs.list('C', function (err, refs) {
       t.error(err)
-      t.deepEqual(refs.map(mapKeys), [], 'C no longer referenced')
+      t.deepEqual(refs.map(mapKeys), [ways[4]], 'C no longer referenced')
     })
     osm.refs.list('D', function (err, refs) {
       t.error(err)
-      t.deepEqual(refs.map(mapKeys), [], 'D no longer referenced')
+      t.deepEqual(refs.map(mapKeys), [ways[4]], 'D no longer referenced')
     })
   }
 })
