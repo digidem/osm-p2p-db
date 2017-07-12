@@ -123,7 +123,7 @@ test('fork way', function (t) {
 test('delete a fork', function (t) {
   t.plan(9)
   // Delete first fork
-  osm.del('F', {keys: [ways[1]]}, function (err, doc) {
+  osm.del('F', {links: [ways[1]]}, function (err, doc) {
     ways[3] = doc.key
     t.error(err)
     osm.ready(ready)
