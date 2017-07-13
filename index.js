@@ -202,8 +202,8 @@ DB.prototype.del = function (key, opts, cb) {
   })
 }
 
-// OsmId, Opts -> [OsmBatchOp]
-DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
+// OsmId, Opts -> OsmBatchOp
+DB.prototype._getDocumentDeletionBatchOp = function (id, opts, cb) {
   var self = this
 
   if (!opts || !opts.links) {
@@ -271,6 +271,8 @@ DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
       }
     })
 
+    var res = { type: 'del', key: id, links: links, fields: fields }
+
     // Use opts.value to set a value on hyperkv deletions.
     if (opts.value) {
       fields = xtend(fields, {
@@ -278,7 +280,7 @@ DB.prototype._getDocumentDeletionBatchOps = function (id, opts, cb) {
       })
     }
 
-    cb(null, [ { type: 'del', key: key, links: links, fields: fields } ])
+    cb(null, res)
   }
 }
 
@@ -317,9 +319,9 @@ DB.prototype.batch = function (rows, opts, cb) {
         if (--pending <= 0) done()
       } else if (row.type === 'del') {
         var xrow = xtend(opts, row)
-        self._getDocumentDeletionBatchOps(key, xrow, function (err, xrows) {
+        self._getDocumentDeletionBatchOp(key, {}, function (err, xrow) {
           if (err) return release(cb, err)
-          batch.push.apply(batch, xrows)
+          batch.push(xrow)
           if (--pending <= 0) done()
         })
       } else {
