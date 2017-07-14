@@ -196,6 +196,8 @@ DB.prototype.del = function (key, opts, cb) {
       fields: opts.value ? { value: opts.value } : null
     }
   ]
+  opts.value = undefined
+  opts.links = undefined
 
   self.batch(rows, opts, function (err, nodes) {
     if (err) cb(err)
@@ -316,7 +318,7 @@ DB.prototype.batch = function (rows, opts, cb) {
         batch.push(row)
         if (--pending <= 0) done()
       } else if (row.type === 'del') {
-        var opts = row.fields ? { value: row.fields.value } : {}
+        opts = row.fields ? { value: row.fields.value } : {}
         self._getDocumentDeletionBatchOp(key, opts, function (err, xrow) {
           if (err) return release(cb, err)
           batch.push(xrow)
