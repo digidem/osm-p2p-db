@@ -192,7 +192,8 @@ DB.prototype.del = function (key, opts, cb) {
     {
       type: 'del',
       key: key,
-      links: opts.links
+      links: opts.links,
+      fields: opts.value ? { value: opts.value } : null
     }
   ]
 
@@ -208,7 +209,7 @@ DB.prototype._getDocumentDeletionBatchOp = function (id, opts, cb) {
 
   if (!opts || !opts.links) {
     // Fetch all versions of the document ID
-    self.kv.get(id, function (err, docs) {
+    self.kv.get(id, { fields: true }, function (err, docs) {
       if (err) return cb(err)
 
       docs = mapObj(docs, function (version, doc) {
@@ -275,9 +276,7 @@ DB.prototype._getDocumentDeletionBatchOp = function (id, opts, cb) {
 
     // Use opts.value to set a value on hyperkv deletions.
     if (opts.value) {
-      fields = xtend(fields, {
-        v: opts.value
-      })
+      res.fields = xtend(res.fields, { v: opts.value })
     }
 
     cb(null, res)
@@ -318,8 +317,8 @@ DB.prototype.batch = function (rows, opts, cb) {
         batch.push(row)
         if (--pending <= 0) done()
       } else if (row.type === 'del') {
-        var xrow = xtend(opts, row)
-        self._getDocumentDeletionBatchOp(key, {}, function (err, xrow) {
+        var opts = row.fields ? { value: row.fields.value } : {}
+        self._getDocumentDeletionBatchOp(key, opts, function (err, xrow) {
           if (err) return release(cb, err)
           batch.push(xrow)
           if (--pending <= 0) done()
