@@ -123,13 +123,9 @@ test('del', function (t) {
 })
 
 test('del with value', function (t) {
-  t.plan(4)
+  t.plan(5)
 
-  var osm = osmdb({
-    log: hyperlog(memdb(), { valueEncoding: 'json' }),
-    db: memdb(),
-    store: fdstore(4096, storefile)
-  })
+  var osm = makeOsm()
 
   var doc = { type: 'node', lat: 14, lon: -14, changeset: 'foobar' }
 
@@ -147,8 +143,10 @@ test('del with value', function (t) {
   })
 
   function doQuery (id, version) {
-    osm.get(id, function (err, doc) {
+    osm.get(id, function (err, heads) {
       t.ifError(err)
+      t.equals(Object.keys(heads).length, 1)
+      var actual = heads[Object.keys(heads)[0]]
       var expected = {
       changeset: 'foobar',
         id: id,
@@ -157,7 +155,7 @@ test('del with value', function (t) {
         version: version,
         deleted: true
       }
-      t.deepEqual(doc, expected, 'correct query /w value')
+      t.deepEqual(actual, expected, 'correct query /w value')
     })
   }
 })
