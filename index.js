@@ -332,16 +332,16 @@ DB.prototype.batch = function (rows, opts, cb) {
   })
 }
 
-DB.prototype.get = function (key, opts, cb) {
+DB.prototype.get = function (id, opts, cb) {
   if (typeof opts === 'function') {
     cb = opts
     opts = {}
   }
-  this.kv.get(key, { fields: true }, function (err, docs) {
+  this.kv.get(id, { fields: true }, function (err, docs) {
     if (err) return cb(err)
     docs = mapObj(docs, function (version, doc) {
       doc.v = xtend(doc.v, {
-        id: key,
+        id: id,
         version: version
       })
       if (doc.d) {
