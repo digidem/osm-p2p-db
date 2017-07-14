@@ -216,8 +216,7 @@ Each `row` in `rows` should have:
 Get a document as `cb(err, docs)` by its OSM `id`.
 
 `docs` is an object mapping hyperlog hashes to current document values. If a
-document has been deleted, it will only have the properties `{ id: <osm-id>,
-version: <osm-version>, deleted: true}`.
+document has been deleted, it will have the property `{ deleted: true }` set.
 
 ### osm.query(q, opts, cb)
 
