@@ -160,35 +160,25 @@ test('del with value', function (t) {
   }
 })
 
-test('way with a deleted node with value', function (t) {
+test('query deleted node with value', function (t) {
   t.plan(4)
 
   var osm = makeOsm()
 
-  var doc1 = { type: 'node', lat: 1, lon: -1, changeset: 'foobar' }
-  var doc2 = { type: 'node', lat: 14, lon: -14, changeset: 'foobar' }
+  var doc = { type: 'node', lat: 14, lon: -14, changeset: 'foobar' }
 
-  // osm.create(doc1, function (err, id1) {
-  //   t.ifError(err)
-    osm.create(doc2, function (err, id2) {
+  osm.create(doc, function (err, id2) {
+    t.ifError(err)
+    var v = {
+      lat: doc.lat,
+      lon: doc.lon,
+      changeset: doc.changeset
+    }
+    osm.del(id2, { value: v }, function (err, node) {
       t.ifError(err)
-      var v = {
-        lat: doc2.lat,
-        lon: doc2.lon,
-        changeset: doc2.changeset
-      }
-      osm.del(id2, { value: v }, function (err, node) {
-        t.ifError(err)
-        // osm.create({
-        //   type: 'way',
-        //   refs: [id1, id2]
-        // }, function (err) {
-        //   t.error(err)
-          doQuery(id2, node.key)
-        // })
-      })
+      doQuery(id2, node.key)
     })
-  // })
+  })
 
   function doQuery (id, version) {
     var q = [[-90,90],[-180,180]]
