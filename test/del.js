@@ -148,7 +148,7 @@ test('del with value', function (t) {
       t.equals(Object.keys(heads).length, 1)
       var actual = heads[Object.keys(heads)[0]]
       var expected = {
-      changeset: 'foobar',
+        changeset: 'foobar',
         id: id,
         lat: 14,
         lon: -14,
