@@ -337,18 +337,17 @@ DB.prototype.get = function (key, opts, cb) {
     cb = opts
     opts = {}
   }
-  this.kv.get(key, function (err, docs) {
+  this.kv.get(key, { fields: true }, function (err, docs) {
     if (err) return cb(err)
     docs = mapObj(docs, function (version, doc) {
-      if (doc.deleted) {
-        return {
-          id: key,
-          version: version,
-          deleted: true
-        }
-      } else {
-        return doc.value
+      doc.v = xtend(doc.v, {
+        id: key,
+        version: version
+      })
+      if (doc.d) {
+        doc.v.deleted = true
       }
+      return doc.v
     })
 
     cb(null, docs)
