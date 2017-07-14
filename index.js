@@ -341,14 +341,7 @@ DB.prototype.get = function (id, opts, cb) {
   this.kv.get(id, { fields: true }, function (err, docs) {
     if (err) return cb(err)
     docs = mapObj(docs, function (version, doc) {
-      doc.v = xtend(doc.v, {
-        id: id,
-        version: version
-      })
-      if (doc.d) {
-        doc.v.deleted = true
-      }
-      return doc.v
+      return kvDocToOsmDoc(version, id, doc)
     })
 
     cb(null, docs)
@@ -476,10 +469,10 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   }
 
   function addDocFromNode (node) {
-    if (node && node.value && node.value.k && node.value.v) {
-      addDoc(node.value.k, node.key, node.value.v)
-    } else if (node && node.value && node.value.d) {
-      addDoc(node.value.d, node.key, {deleted: true})
+    if (node && node.value && (node.value.k || node.value.d)) {
+      var id = node.value.k || node.value.d
+      var doc = kvDocToOsmDoc(node.key, id, node.value)
+      addDoc(id, node.key, doc)
     }
   }
 
@@ -629,4 +622,19 @@ function kdbPointToVersion (pt) {
 // {lat: Number, lon: Number} -> [Number, Number]
 function ptf (x) {
   return [ Number(x.lat), Number(x.lon) ]
+}
+
+// Populates an OsmDoc with its version, id, and whether it's a deletion
+// tombstone.
+// OsmVersion, OsmId, OsmDoc -> OsmDoc
+function kvDocToOsmDoc (version, id, doc) {
+  var res = {}
+  res = xtend(doc.v, {
+    id: id,
+    version: version
+  })
+  if (doc.d) {
+    res.deleted = true
+  }
+  return res
 }
