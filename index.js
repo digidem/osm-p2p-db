@@ -213,15 +213,14 @@ DB.prototype._getDocumentDeletionBatchOp = function (id, opts, cb) {
       if (err) return cb(err)
 
       docs = mapObj(docs, function (version, doc) {
-        if (doc.deleted) {
-          return {
-            id: id,
-            version: version,
-            deleted: true
-          }
-        } else {
-          return doc.value
+        doc.v = xtend(doc.v, {
+          id: id,
+          version: version
+        })
+        if (doc.d) {
+          doc.v.deleted = true
         }
+        return doc.v
       })
 
       handleLinks(docs)
