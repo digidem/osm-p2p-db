@@ -25,9 +25,11 @@ if (process.argv[2] === 'create') {
   var q = process.argv.slice(3).map(csplit)
   osm.query(q, function (err, pts) {
     if (err) console.error(err)
-    else pts.forEach(function (pt) {
-      console.log(pt)
-    })
+    else {
+      pts.forEach(function (pt) {
+        console.log(pt)
+      })
+    }
   })
 }
 

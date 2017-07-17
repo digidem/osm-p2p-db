@@ -13,11 +13,14 @@ test('batch relation of ways', function (t) {
     { type: 'put', key: 'F', value: { type: 'node', lat: 62.3, lon: -146.4 } },
     { type: 'put', key: 'G', value: { type: 'node', lat: 62.6, lon: -146.0 } },
     { type: 'put', key: 'H', value: { type: 'way', refs: [ 'E', 'F', 'G' ] } },
-    { type: 'put', key: 'I', value: { type: 'relation', members: [
+    { type: 'put',
+      key: 'I',
+      value: { type: 'relation',
+        members: [
       { type: 'way', ref: 'D' },
       { type: 'way', ref: 'H' },
       { type: 'node', ref: 'G' }
-    ] } }
+        ] } }
   ]
   var osm = makeOsm()
   osm.batch(batch, function (err) {
@@ -26,7 +29,7 @@ test('batch relation of ways', function (t) {
   })
 
   function query () {
-    var q0 = [[62,63],[-145.5,-144.5]]
+    var q0 = [[62, 63], [-145.5, -144.5]]
     var ex0 = [
       { type: 'node', lat: 62.1, lon: -145.1, id: 'E' },
       { type: 'node', lat: 62.3, lon: -146.4, id: 'F' },

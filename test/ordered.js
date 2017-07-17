@@ -20,23 +20,42 @@ test('ordered types', function (t) {
   })
 
   function query (nodes) {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ext0 = [ 'node', 'node', 'node', 'node', 'node', 'way', 'way' ]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: 'A', version: nodes[0].key },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: 'B', version: nodes[1].key },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: 'C', version: nodes[2].key },
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: 'E', version: nodes[4].key },
-      { type: 'node', lat: 65.1, lon: -148.5,
-        id: 'F', version: nodes[5].key },
-      { type: 'way', refs: [ 'A', 'B', 'C' ],
-        id: 'D', version: nodes[3].key },
-      { type: 'way', refs: [ 'E', 'F' ],
-        id: 'G', version: nodes[6].key }
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: 'A',
+        version: nodes[0].key },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: 'B',
+        version: nodes[1].key },
+      { type: 'node',
+        lat: 64.2,
+        lon: -146.5,
+        id: 'C',
+        version: nodes[2].key },
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: 'E',
+        version: nodes[4].key },
+      { type: 'node',
+        lat: 65.1,
+        lon: -148.5,
+        id: 'F',
+        version: nodes[5].key },
+      { type: 'way',
+        refs: [ 'A', 'B', 'C' ],
+        id: 'D',
+        version: nodes[3].key },
+      { type: 'way',
+        refs: [ 'E', 'F' ],
+        id: 'G',
+        version: nodes[6].key }
     ].sort(idcmp)
 
     osm.query(q0, { order: 'type' }, function (err, res) {

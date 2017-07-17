@@ -1,5 +1,4 @@
 var test = require('tape')
-var collect = require('collect-stream')
 var makeOsm = require('./create_db')
 
 test('changeset', function (t) {
@@ -59,7 +58,3 @@ test('changeset', function (t) {
     })
   }
 })
-
-function idcmp (a, b) {
-  return a.id < b.id ? -1 : 1
-}

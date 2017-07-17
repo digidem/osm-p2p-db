@@ -48,16 +48,27 @@ test('del relation', function (t) {
   })()
 
   function ready () {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C },
-      { type: 'way', refs: [names.A, names.B, names.C],
-        id: names.D, version: versions.D },
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: names.A,
+        version: versions.A },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: names.B,
+        version: versions.B },
+      { type: 'node',
+        lat: 64.2,
+        lon: -146.5,
+        id: names.C,
+        version: versions.C },
+      { type: 'way',
+        refs: [names.A, names.B, names.C],
+        id: names.D,
+        version: versions.D },
       { deleted: true, id: names.E, version: versions.F }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
@@ -82,7 +93,7 @@ test('del relation in relation', function (t) {
     D: { type: 'way', refs: [ 'A', 'B', 'C' ] },
     E: { type: 'relation', members: [ 'A', 'B', 'D' ] },
     F: { type: 'relation', members: [ 'A', 'E', 'D' ] },
-    G: { d: 'F' },
+    G: { d: 'F' }
   }
   var names = {}
   var nodes = {}
@@ -118,18 +129,31 @@ test('del relation in relation', function (t) {
   })()
 
   function ready () {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: names.C, version: versions.C },
-      { type: 'way', refs: [names.A, names.B, names.C],
-        id: names.D, version: versions.D },
-      { type: 'relation', members: [names.A, names.B, names.D],
-        id: names.E, version: versions.E },
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: names.A,
+        version: versions.A },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: names.B,
+        version: versions.B },
+      { type: 'node',
+        lat: 64.2,
+        lon: -146.5,
+        id: names.C,
+        version: versions.C },
+      { type: 'way',
+        refs: [names.A, names.B, names.C],
+        id: names.D,
+        version: versions.D },
+      { type: 'relation',
+        members: [names.A, names.B, names.D],
+        id: names.E,
+        version: versions.E },
       { deleted: true, id: names.F, version: versions.G }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {

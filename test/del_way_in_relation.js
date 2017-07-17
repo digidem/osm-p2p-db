@@ -56,12 +56,15 @@ test('delete a way from a relation', function (t) {
   })()
 
   function ready () {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ex0 = [
       { deleted: true,
-        id: names.E, version: versions.F },
-      { type: 'relation', members: [ names.E ],
-        id: names.G, version: versions.G },
+        id: names.E,
+        version: versions.F },
+      { type: 'relation',
+        members: [ names.E ],
+        id: names.G,
+        version: versions.G }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
@@ -72,12 +75,15 @@ test('delete a way from a relation', function (t) {
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
     })
 
-    var q1 = [[62,64],[-149.5,-147.5]]
+    var q1 = [[62, 64], [-149.5, -147.5]]
     var ex1 = [
       { deleted: true,
-        id: names.E, version: versions.F },
-      { type: 'relation', members: [ names.E ],
-        id: names.G, version: versions.G },
+        id: names.E,
+        version: versions.F },
+      { type: 'relation',
+        members: [ names.E ],
+        id: names.G,
+        version: versions.G }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)
@@ -89,7 +95,7 @@ test('delete a way from a relation', function (t) {
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')
     })
 
-    var q2 = [[62,64],[-147,-145]]
+    var q2 = [[62, 64], [-147, -145]]
     var ex2 = []
     osm.query(q2, function (err, res) {
       t.ifError(err)

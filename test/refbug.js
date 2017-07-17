@@ -5,12 +5,14 @@ var makeOsm = require('./create_db')
 test('refbug', function (t) {
   t.plan(data.length + 5)
   var osm = makeOsm()
-  var nodes = [], docs = {}, deletions = {}
+  var nodes = []
+  var docs = {}
+  var deletions = {}
   ;(function next () {
     if (data.length === 0) return osm.ready(ready)
     var row = data.shift()
     var prev = docs[row.key]
-    var p = prev && prev[prev.length-1]
+    var p = prev && prev[prev.length - 1]
     var links = p ? [p] : []
     if (row.type === 'del') {
       osm.del(row.key, { links: links }, function (err, node) {
@@ -30,7 +32,7 @@ test('refbug', function (t) {
   })()
 
   function ready () {
-    var bbox = [[64,66],[-149,-146]]
+    var bbox = [[64, 66], [-149, -146]]
     osm.query(bbox, function (err, res) {
       t.error(err)
       t.equal(res.length, 3)
@@ -42,19 +44,18 @@ test('refbug', function (t) {
         id: 'n1',
         lat: 64.9,
         lon: -147.9,
-        version: nodes[nodes.length-2].key
+        version: nodes[nodes.length - 2].key
       })
       t.deepEqual(node2, {
         id: 'n2',
         deleted: true,
-        id: 'n2',
         version: deletions['n2']
       })
       t.deepEqual(way, {
         type: 'way',
         id: 'w1',
         refs: [ 'n1' ],
-        version: nodes[nodes.length-1].key
+        version: nodes[nodes.length - 1].key
       })
     })
   }
@@ -137,11 +138,14 @@ test('refbug 2: ways referred to by old versions of a relation are retained', fu
     { type: 'put', key: 'B', value: { type: 'node', lat: 1.0, lon: 2.0 } },
     { type: 'put', key: 'C', value: { type: 'node', lat: 3.0, lon: 4.0 } },
     { type: 'put', key: 'D', value: { type: 'node', lat: 64.123, lon: -147.56 } },
-    { type: 'put', key: 'E', value: {
-      type: 'relation', members: [
+    { type: 'put',
+      key: 'E',
+      value: {
+        type: 'relation',
+        members: [
         { type: 'node', ref: 'A' },
         { type: 'node', ref: 'B' }
-      ] }
+        ] }
     }
   ]
   var versions = {}
@@ -188,7 +192,8 @@ test('refbug 2: ways referred to by old versions of a relation are retained', fu
 
   function nextStep () {
     // modify original way
-    var rel1 = { type: 'relation', members: [
+    var rel1 = { type: 'relation',
+      members: [
         { type: 'node', ref: 'A' },
         { type: 'node', ref: 'C' }
       ] }

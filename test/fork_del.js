@@ -1,5 +1,4 @@
 var test = require('tape')
-var collect = require('collect-stream')
 var makeOsm = require('./create_db')
 
 //       /-- A1 <--\
@@ -42,7 +41,7 @@ test('forked node /w merging delete', function (t) {
   })
 
   function query () {
-    var q0 = [[-90,90],[-90,90]]
+    var q0 = [[-90, 90], [-90, 90]]
     var expected = [{
       id: id,
       version: delVersion,

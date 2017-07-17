@@ -1,5 +1,4 @@
 var test = require('tape')
-var collect = require('collect-stream')
 var makeOsm = require('./create_db')
 
 test('count forks', function (t) {
@@ -81,10 +80,3 @@ test('count forks', function (t) {
     })
   }
 })
-
-function idcmp (a, b) {
-  var aloc = a.lat + ',' + a.lon
-  var bloc = b.lat + ',' + b.lon
-  if (a.id === b.id) return aloc < bloc ? -1 : 1
-  return a.id < b.id ? -1 : 1
-}

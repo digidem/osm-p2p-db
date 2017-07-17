@@ -17,17 +17,28 @@ test('ordered types - node in bbox returns linked way and refs nodes', function 
   })
 
   function query (nodes) {
-    var q0 = [[1,2],[1,2]]
+    var q0 = [[1, 2], [1, 2]]
     var ext0 = [ 'node', 'node', 'node', 'way' ]
     var ex0 = [
-      { type: 'node', lat: 1.1, lon: 1.1,
-        id: 'A', version: nodes[0].key },
-      { type: 'node', lat: 2.1, lon: 2.1,
-        id: 'B', version: nodes[1].key },
-      { type: 'node', lat: 1.2, lon: 1.2,
-        id: 'C', version: nodes[2].key },
-      { type: 'way', refs: [ 'A', 'B', 'C' ],
-        id: 'D', version: nodes[3].key }
+      { type: 'node',
+        lat: 1.1,
+        lon: 1.1,
+        id: 'A',
+        version: nodes[0].key },
+      { type: 'node',
+        lat: 2.1,
+        lon: 2.1,
+        id: 'B',
+        version: nodes[1].key },
+      { type: 'node',
+        lat: 1.2,
+        lon: 1.2,
+        id: 'C',
+        version: nodes[2].key },
+      { type: 'way',
+        refs: [ 'A', 'B', 'C' ],
+        id: 'D',
+        version: nodes[3].key }
     ].sort(idcmp)
 
     osm.query(q0, { order: 'type' }, function (err, res) {

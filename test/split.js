@@ -1,5 +1,4 @@
 var test = require('tape')
-var collect = require('collect-stream')
 var makeOsm = require('./create_db')
 
 test('split', function (t) {
@@ -9,14 +8,14 @@ test('split', function (t) {
     { type: 'put', key: 'A', value: { type: 'node', lat: 64.5, lon: -147.3 } },
     { type: 'put', key: 'B', value: { type: 'node', lat: 63.9, lon: -147.6 } },
     { type: 'put', key: 'C', value: { type: 'node', lat: 64.2, lon: -146.5 } },
-    { type: 'put', key: 'D', value: { type: 'way', refs: ['A','B','C'] } },
+    { type: 'put', key: 'D', value: { type: 'way', refs: ['A', 'B', 'C'] } },
     { type: 'put', key: 'E', value: { type: 'node', lat: 64.1, lon: -146.2 } },
     { type: 'put', key: 'F', value: { type: 'way', refs: ['E'] } }
   ]
   var batch1 = [
     { type: 'del', key: 'A' },
     { type: 'del', key: 'D' },
-    { type: 'put', key: 'F', value: { type: 'way', refs: ['B','C','E'] } }
+    { type: 'put', key: 'F', value: { type: 'way', refs: ['B', 'C', 'E'] } }
   ]
   osm.batch(batch0, function (err, nodes) {
     t.error(err)
@@ -26,7 +25,7 @@ test('split', function (t) {
     })
   })
   function check () {
-    var q = [[63,65],[-148,-145]]
+    var q = [[63, 65], [-148, -145]]
     osm.query(q, function (err, res) {
       t.error(err)
       var docs = res.map(function (r) {
@@ -44,7 +43,7 @@ test('split', function (t) {
         ['E', false],
         ['F', false]
       ])
-      t.deepEqual(rows.F.refs, ['B','C','E'])
+      t.deepEqual(rows.F.refs, ['B', 'C', 'E'])
     })
   }
 })

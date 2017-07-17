@@ -19,16 +19,27 @@ test('create 3 nodes and a way', function (t) {
 
   function check (nodes) {
     var pending = 6
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: 'A', version: nodes[0].key },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: 'B', version: nodes[1].key },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: 'C', version: nodes[2].key },
-      { type: 'way', refs: [ 'A', 'B', 'C' ],
-        id: 'D', version: nodes[3].key }
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: 'A',
+        version: nodes[0].key },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: 'B',
+        version: nodes[1].key },
+      { type: 'node',
+        lat: 64.2,
+        lon: -146.5,
+        id: 'C',
+        version: nodes[2].key },
+      { type: 'way',
+        refs: [ 'A', 'B', 'C' ],
+        id: 'D',
+        version: nodes[3].key }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
@@ -40,16 +51,27 @@ test('create 3 nodes and a way', function (t) {
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
       if (--pending === 0) cleanup()
     })
-    var q1 = [[62,64],[-149.5,-147.5]]
+    var q1 = [[62, 64], [-149.5, -147.5]]
     var ex1 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: 'A', version: nodes[0].key },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: 'B', version: nodes[1].key },
-      { type: 'node', lat: 64.2, lon: -146.5,
-        id: 'C', version: nodes[2].key },
-      { type: 'way', refs: [ 'A', 'B', 'C' ],
-        id: 'D', version: nodes[3].key }
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: 'A',
+        version: nodes[0].key },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: 'B',
+        version: nodes[1].key },
+      { type: 'node',
+        lat: 64.2,
+        lon: -146.5,
+        id: 'C',
+        version: nodes[2].key },
+      { type: 'way',
+        refs: [ 'A', 'B', 'C' ],
+        id: 'D',
+        version: nodes[3].key }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)
@@ -61,7 +83,7 @@ test('create 3 nodes and a way', function (t) {
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')
       if (--pending === 0) cleanup()
     })
-    var q2 = [[62,64],[-147,-145]]
+    var q2 = [[62, 64], [-147, -145]]
     var ex2 = []
     osm.query(q2, function (err, res) {
       t.ifError(err)

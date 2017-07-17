@@ -44,7 +44,7 @@ test('del way', function (t) {
   })()
 
   function ready () {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ex0 = [
       { deleted: true, id: names.D, version: versions.E }
     ].sort(idcmp)
@@ -57,10 +57,7 @@ test('del way', function (t) {
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage stream')
     })
 
-    var q1 = [[63,64],[-148,-146]]
-    var ex1 = [
-      { deleted: true, id: names.D, version: versions.E }
-    ].sort(idcmp)
+    var q1 = [[63, 64], [-148, -146]]
     osm.query(q1, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'partial coverage query')

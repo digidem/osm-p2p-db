@@ -1,5 +1,4 @@
 var test = require('tape')
-var collect = require('collect-stream')
 var makeOsm = require('./create_db')
 
 test('update node', function (t) {
@@ -42,31 +41,53 @@ test('update node', function (t) {
   }
 
   function check () {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 62.5, lon: -146.2,
-        id: names.C, version: versions.C },
-      { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D }
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: names.A,
+        version: versions.A },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: names.B,
+        version: versions.B },
+      { type: 'node',
+        lat: 62.5,
+        lon: -146.2,
+        id: names.C,
+        version: versions.C },
+      { type: 'way',
+        refs: [ names.A, names.B, names.C ],
+        id: names.D,
+        version: versions.D }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'updated query 0')
     })
-    var q1 = [[62,64],[-149.5,-146]]
+    var q1 = [[62, 64], [-149.5, -146]]
     var ex1 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B },
-      { type: 'node', lat: 62.5, lon: -146.2,
-        id: names.C, version: versions.C },
-      { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D }
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: names.A,
+        version: versions.A },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: names.B,
+        version: versions.B },
+      { type: 'node',
+        lat: 62.5,
+        lon: -146.2,
+        id: names.C,
+        version: versions.C },
+      { type: 'way',
+        refs: [ names.A, names.B, names.C ],
+        id: names.D,
+        version: versions.D }
     ].sort(idcmp)
     osm.query(q1, function (err, res) {
       t.ifError(err)

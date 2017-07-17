@@ -1,5 +1,4 @@
 var test = require('tape')
-var collect = require('collect-stream')
 var makeOsm = require('./create_db')
 
 test('fork', function (t) {
@@ -64,18 +63,32 @@ test('fork', function (t) {
   }
 
   function check () {
-    var q0 = [[63,65],[-148,-146]]
+    var q0 = [[63, 65], [-148, -146]]
     var ex0 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A[0] },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B[0] },
-      { type: 'node', lat: 62.5, lon: -146.2,
-        id: names.C, version: versions.C[1] },
-      { type: 'node', lat: 62.4, lon: -146.3,
-        id: names.C, version: versions.C[2] },
-      { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D[0] }
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: names.A,
+        version: versions.A[0] },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: names.B,
+        version: versions.B[0] },
+      { type: 'node',
+        lat: 62.5,
+        lon: -146.2,
+        id: names.C,
+        version: versions.C[1] },
+      { type: 'node',
+        lat: 62.4,
+        lon: -146.3,
+        id: names.C,
+        version: versions.C[2] },
+      { type: 'way',
+        refs: [ names.A, names.B, names.C ],
+        id: names.D,
+        version: versions.D[0] }
     ].sort(idcmp)
     osm0.query(q0, function (err, res) {
       t.ifError(err)
@@ -85,18 +98,32 @@ test('fork', function (t) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'updated query 0')
     })
-    var q1 = [[62,64],[-149.5,-146]]
+    var q1 = [[62, 64], [-149.5, -146]]
     var ex1 = [
-      { type: 'node', lat: 64.5, lon: -147.3,
-        id: names.A, version: versions.A[0] },
-      { type: 'node', lat: 63.9, lon: -147.6,
-        id: names.B, version: versions.B[0] },
-      { type: 'node', lat: 62.5, lon: -146.2,
-        id: names.C, version: versions.C[1] },
-      { type: 'node', lat: 62.4, lon: -146.3,
-        id: names.C, version: versions.C[2] },
-      { type: 'way', refs: [ names.A, names.B, names.C ],
-        id: names.D, version: versions.D[0] }
+      { type: 'node',
+        lat: 64.5,
+        lon: -147.3,
+        id: names.A,
+        version: versions.A[0] },
+      { type: 'node',
+        lat: 63.9,
+        lon: -147.6,
+        id: names.B,
+        version: versions.B[0] },
+      { type: 'node',
+        lat: 62.5,
+        lon: -146.2,
+        id: names.C,
+        version: versions.C[1] },
+      { type: 'node',
+        lat: 62.4,
+        lon: -146.3,
+        id: names.C,
+        version: versions.C[2] },
+      { type: 'way',
+        refs: [ names.A, names.B, names.C ],
+        id: names.D,
+        version: versions.D[0] }
     ].sort(idcmp)
     osm0.query(q1, function (err, res) {
       t.ifError(err)

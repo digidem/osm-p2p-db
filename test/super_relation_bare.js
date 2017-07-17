@@ -48,20 +48,35 @@ test('relations of relations', function (t) {
   })()
 
   function ready () {
-    var q0 = [[62,63],[-145.5,-144.5]]
+    var q0 = [[62, 63], [-145.5, -144.5]]
     var ex0 = [
-      { type: 'node', lat: 62.1, lon: -145.1,
-        id: names.E, version: versions.E },
-      { type: 'node', lat: 62.3, lon: -146.4,
-        id: names.F, version: versions.F },
-      { type: 'node', lat: 62.6, lon: -146.0,
-        id: names.G, version: versions.G },
-      { type: 'way', refs: [ names.E, names.F, names.G ],
-        id: names.H, version: versions.H },
-      { type: 'relation', members: [ names.D, names.H ],
-        id: names.I, version: versions.I },
-      { type: 'relation', members: [ names.I, names.N ],
-        id: names.O, version: versions.O }
+      { type: 'node',
+        lat: 62.1,
+        lon: -145.1,
+        id: names.E,
+        version: versions.E },
+      { type: 'node',
+        lat: 62.3,
+        lon: -146.4,
+        id: names.F,
+        version: versions.F },
+      { type: 'node',
+        lat: 62.6,
+        lon: -146.0,
+        id: names.G,
+        version: versions.G },
+      { type: 'way',
+        refs: [ names.E, names.F, names.G ],
+        id: names.H,
+        version: versions.H },
+      { type: 'relation',
+        members: [ names.D, names.H ],
+        id: names.I,
+        version: versions.I },
+      { type: 'relation',
+        members: [ names.I, names.N ],
+        id: names.O,
+        version: versions.O }
     ].sort(idcmp)
     osm.query(q0, function (err, res) {
       t.ifError(err)
