@@ -44,7 +44,8 @@ function DB (opts) {
     types: [ 'float64', 'float64' ],
     map: function (row, next) {
       if (!row.value) return null
-      var v = row.value.v, d = row.value.d
+      var v = row.value.v
+      var d = row.value.d
       if (v && v.lat !== undefined && v.lon !== undefined) {
         next(null, { type: 'put', point: ptf(v) })
       } else if (d && Array.isArray(row.value.points)) {
@@ -60,7 +61,8 @@ function DB (opts) {
     db: sub(self.db, 'r'),
     map: function (row, cb) {
       if (!row.value) return
-      var k = row.value.k, v = row.value.v || {}
+      var k = row.value.k
+      var v = row.value.v || {}
       var d = row.value.d
       var ops = []
       var next = after(function (err) {
@@ -82,7 +84,7 @@ function DB (opts) {
             }
           }
           if (node.value.v.members) {
-            for (var i = 0; i < node.value.v.members.length; i++) {
+            for (i = 0; i < node.value.v.members.length; i++) {
               var member = node.value.v.members[i]
               if (typeof member === 'string') member = { ref: member }
               if (typeof member.ref !== 'string') return
@@ -99,7 +101,7 @@ function DB (opts) {
         for (var i = 0; i < refs.length; i++) {
           ops.push({ type: 'put', key: refs[i], value: k })
         }
-        for (var i = 0; i < members.length; i++) {
+        for (i = 0; i < members.length; i++) {
           ops.push({ type: 'put', key: members[i].ref || members[i], value: k })
         }
       }
@@ -363,7 +365,8 @@ DB.prototype.query = function (q, opts, cb) {
 
   function onquery (err, pts) {
     if (err) return cb(err)
-    var pending = 1, seen = {}
+    var pending = 1
+    var seen = {}
     for (var i = 0; i < pts.length; i++) {
       var pt = pts[i]
       pending++
@@ -389,7 +392,9 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
   if (seenAccum[version]) return cb(null, [])
-  var res = [], added = {}, pending = 1
+  var res = []
+  var added = {}
+  var pending = 1
 
   // Track the original node that came from the kdb query that brought us here,
   // but don't add it yet. There are certain conditions (e.g. there is only one
@@ -405,7 +410,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
     self._getReferers(version, onLinks)
   })
 
-  function onLinks (err, links) {
+  function onLinks (_, links) {
     if (!links) links = []
 
     // The original node has nothing referring to it, so it's a standalone node
@@ -506,7 +511,8 @@ DB.prototype.queryStream = function (q, opts) {
   var stream = opts.order === 'type'
     ? through.obj(writeType, endType)
     : through.obj(write)
-  var seen = {}, queue = []
+  var seen = {}
+  var queue = []
   self.ready(function () {
     var r = self.kdb.queryStream(q, opts)
     r.on('error', stream.emit.bind(stream, 'error'))
@@ -519,9 +525,11 @@ DB.prototype.queryStream = function (q, opts) {
     var tr = this
     self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
       if (err) return next()
-      if (res) res.forEach(function (r) {
-        tr.push(r)
-      })
+      if (res) {
+        res.forEach(function (r) {
+          tr.push(r)
+        })
+      }
       next()
     })
   }
@@ -530,10 +538,12 @@ DB.prototype.queryStream = function (q, opts) {
     var tr = this
     self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
       if (err) return next()
-      if (res) res.forEach(function (r) {
-        if (r.type === 'node') tr.push(r)
-        else queue.push(r)
-      })
+      if (res) {
+        res.forEach(function (r) {
+          if (r.type === 'node') tr.push(r)
+          else queue.push(r)
+        })
+      }
       next()
     })
   }
