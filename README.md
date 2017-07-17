@@ -1,6 +1,7 @@
 # osm-p2p-db
 
 [![Build Status](https://img.shields.io/travis/digidem/osm-p2p-db.svg)](https://travis-ci.org/digidem/osm-p2p-db)
+[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?maxAge=2592000)](http://standardjs.com/)
 [![npm](https://img.shields.io/npm/v/osm-p2p-db.svg?maxAge=2592000)](https://www.npmjs.com/package/osm-p2p-db)
 
 > p2p database for open street map data
