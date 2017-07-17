@@ -46,9 +46,6 @@ function DB (opts) {
       if (!row.value) return null
       var v = row.value.v
       var d = row.value.d
-      if (v && v.lat !== undefined && v.lon !== undefined) {
-      var v = row.value.v
-      var d = row.value.d
       var k = row.value.k
       if (k && v.lat !== undefined && v.lon !== undefined) {
         next(null, { type: 'put', point: ptf(v) })
