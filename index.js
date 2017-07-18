@@ -45,11 +45,12 @@ function DB (opts) {
     map: function (row, next) {
       if (!row.value) return null
       var v = row.value.v
-      var d = row.value.d
-      var k = row.value.k
-      if (k && v.lat !== undefined && v.lon !== undefined) {
+
+      // Index the new point
+      if (row.value.k && v.lat !== undefined && v.lon !== undefined) {
         next(null, { type: 'put', point: ptf(v) })
-      } else if (d && Array.isArray(row.value.points)) {
+      // Index a deleted point or way
+      } else if (row.value.d && Array.isArray(row.value.points)) {
         var pts = row.value.points.map(ptf)
         next(null, { type: 'put', points: pts })
       } else next()
