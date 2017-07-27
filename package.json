@@ -1,6 +1,6 @@
 {
   "name": "osm-p2p-db",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "p2p database for open street map data",
   "main": "index.js",
   "scripts": {
