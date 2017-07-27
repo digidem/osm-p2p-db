@@ -36,6 +36,16 @@ function DB (opts) {
 
   self.lock = lock()
 
+  self.restartIndexes()
+}
+
+DB.prototype._restartIndexes = function () {
+  var self = this
+
+  if (self.kdb) self.kdb.dex.pause()
+  if (self.refs) self.refs.dex.pause()
+  if (self.changeset) self.changeset.dex.pause()
+
   self.kdb = hyperkdb({
     log: self.log,
     store: self.store,
