@@ -36,7 +36,7 @@ function DB (opts) {
 
   self.lock = lock()
 
-  self.restartIndexes()
+  self._restartIndexes()
 }
 
 DB.prototype._restartIndexes = function () {
