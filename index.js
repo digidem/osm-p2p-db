@@ -86,16 +86,19 @@ DB.prototype._restartIndexes = function () {
         var done = next()
         self.log.get(link, function (err, node) {
           if (err) return done(err)
-          if (node.value.v.refs) {
-            for (var i = 0; i < node.value.v.refs.length; i++) {
-              var ref = node.value.v.refs[i]
+          var refs = (node.value.v ? node.value.v.refs : node.value.refs)
+          var members = (node.value.v ? node.value.v.members : node.value.members)
+
+          if (refs) {
+            for (var i = 0; i < refs.length; i++) {
+              var ref = refs[i]
               ops.push({ type: 'del', key: ref, rowKey: link })
               if (d) ops.push({ type: 'put', key: ref, value: d })
             }
           }
-          if (node.value.v.members) {
-            for (i = 0; i < node.value.v.members.length; i++) {
-              var member = node.value.v.members[i]
+          if (members) {
+            for (var i = 0; i < members.length; i++) {
+              var member = members[i]
               if (typeof member === 'string') member = { ref: member }
               if (typeof member.ref !== 'string') return
               ops.push({ type: 'del', key: member.ref, rowKey: link })
