@@ -16,6 +16,7 @@ var lock = require('mutexify')
 var defined = require('defined')
 var after = require('after-all')
 var mapLimit = require('async/mapLimit')
+var memoize = require('memoize')
 
 module.exports = DB
 inherits(DB, EventEmitter)
@@ -355,53 +356,150 @@ DB.prototype.get = function (key, opts, cb) {
   })
 }
 
-DB.prototype.query = function (q, opts, cb) {
+// NOTE: doesn't do any deduplication; the caller is responsible for this
+// TODO: memoized function for _getReferers
+// TODO: memoized function for self.get(id)
+DB.prototype._collectNodeAndReferers = function (version, lookupFn, cb) {
   var self = this
-  if (typeof opts === 'function') {
-    cb = opts
-    opts = {}
-  }
-  if (!opts) opts = {}
-  cb = once(cb || noop)
-  var res = []
 
-  var done = once(function () {
-    if (opts.order === 'type') {
-      res.sort(cmpType)
-    }
-    cb(null, res)
-  })
+  collectBboxNode(version, cb)
+  return
 
-  self.ready(function () {
-    self.kdb.query(q, opts, onquery)
-  })
+  // Collects a node that is within the query bounding box, as well as all ways
+  // and relations that refer to it.
+  // collectBboxNode :: OsmVersion -> [OsmElement]
+  function collectBboxNode (version, cb) {
+    lookupFn(version, function (err, pt) {
+      if (err) return cb(err)
 
-  function onquery (err, pts) {
-    if (err) return cb(err)
-    var pending = 1
-    var seen = {}
-    for (var i = 0; i < pts.length; i++) {
-      var pt = pts[i]
-      pending++
-      self._collectNodeAndReferers(kdbPointToVersion(pt), seen, function (err, r) {
+      var result = [pt]
+      var pending = 2
+
+      versionToRefererElements(version, function (err, elms) {
         if (err) return cb(err)
-        if (r) res = res.concat(r)
-        if (--pending <= 0) done()
+        pending--
+
+        // If all referers are ways OR deleted, don't collect this bbox node.
+        var allRefsDeleted = elms.length > 0 && elms.every(function (elm) {
+          return elm.type !== 'way' || elm.deleted
+        })
+        if (allRefsDeleted) result.shift()
+
+        elms.forEach(function (elm) {
+          // Collect all ways referring to this node.
+          if (elm.type === 'way') {
+            pending++
+            collectWay(elm.version, function (err, elms) {
+              result.push.apply(result, elms)
+              if (!--pending) cb(null, result)
+            })
+          }
+
+          // XXX: Collect any deleted referrers just in case; right now we
+          // don't know the type of deleted elements.
+          if (elm.deleted) {
+            console.log('foobar', elm)
+            result.push(elm)
+          }
+        })
       })
-    }
-    if (--pending <= 0) done()
+
+      // Collect all relations referring to this node.
+      collectRelationsOf(pt.version, function (err, elms) {
+        result.push.apply(result, elms)
+        if (!--pending) cb(null, result)
+      })
+    })
   }
-}
-var typeOrder = { node: 0, way: 1, relation: 2 }
-function cmpType (a, b) {
-  return typeOrder[a.type] - typeOrder[b.type]
+
+  // Visits a way and all heads of its nodes. Includes the way in its results.
+  // collectWay :: OsmVersion -> [OsmElement]
+  function collectWay (version, cb) {
+    lookupFn(version, function (err, elm) {
+      if (err) cb(err)
+
+      if (elm.deleted) {
+        return cb(null, [elm])
+      }
+
+      var result = [elm]
+      var pending = 2
+
+      // Collect its nodes.
+      mapLimit(elm.refs, 5, idToHeadElements, function (err, elmses) {
+        var elms = flatten(elmses)
+        result.push.apply(result, elms)
+        if (!--pending) return cb(null, result)
+      })
+
+      // Collect all referers that are relations.
+      console.log('way', elm)
+      collectRelationsOf(version, function (err, elms) {
+        console.log('way rels', elms)
+        result.push.apply(result, elms)
+        if (!--pending) return cb(null, result)
+      })
+    })
+  }
+
+  // Collect all relations referring to the element, recursively.
+  // OsmVersion -> [OsmElement]
+  function collectRelationsOf (version, cb) {
+    versionToRefererElements(version, function (err, elms) {
+      if (err) return cb(err)
+
+      var result = elms.filter(function (elm) { return elm.type === 'relation' })
+      var relationVersions = elms.map(function (elm) { return elm.version })
+
+      mapLimit(relationVersions, 5, collectRelationsOf, function (err, elmses) {
+        if (err) return cb(err)
+
+        var elms = flatten(elmses)
+        result.push.apply(result, elms)
+        cb(null, result)
+      })
+    })
+  }
+
+  // OsmVersion -> [OsmElement]
+  function versionToRefererElements (version, cb) {
+    self._getReferers(version, function (err, versions) {
+      if (err) return cb(err)
+      mapLimit(versions, 5, lookupFn, cb)
+    })
+  }
+
+  // Takes an OsmId, gets all heads for that OsmId, and returns their
+  // OsmElements.
+  // OsmId -> [OsmElement]
+  function idToHeadElements (id, cb) {
+    idToHeadVersions(id, function (err, versions) {
+      mapLimit(versions, 5, lookupFn, cb)
+    })
+  }
+
+  // OsmVersion -> [OsmVersion]
+  function versionToHeadVersions (version, cb) {
+    lookupFn(version, function (err, elm) {
+      if (err) return cb(err)
+      idToHeadVersions(elm.id, cb)
+    })
+  }
+
+  // OsmId -> [OsmVersion]
+  function idToHeadVersions (id, cb) {
+    self.get(id, function (err, heads) {
+      if (err) cb(err)
+      else cb(null, Object.keys(heads))
+    })
+  }
 }
 
 // Given a node by its version, this collects the node itself, and also
 // recursively climbs all ways and relations that the node (or its referers)
 // are referred to by.
 // OsmVersion, { OsmVersion: Boolean } -> [OsmDocument]
-DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
+DB.prototype.__collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
   if (seenAccum[version]) return cb(null, [])
@@ -444,6 +542,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
           addDocFromNode(node)
           if (node && node.value && node.value.k && node.value.v) {
             // Add the original node if a referer is a relation.
+            // TODO: test this case (also where there are multiple refs that are all relations)
             if (originalNode && !seenAccum[originalNode.key] && node.value.v.type === 'relation') {
               addDocFromNode(originalNode)
               seenAccum[originalNode.key] = true
@@ -500,8 +599,6 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
 
   function addWayNodes (refs) {
     refs.forEach(function (ref) {
-      if (seenAccum[ref]) return
-      seenAccum[ref] = true
       pending++
       self.get(ref, function (err, docs) {
         // TODO: handle error
@@ -518,14 +615,84 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   }
 }
 
+DB.prototype.query = function (q, opts, cb) {
+  var self = this
+  if (typeof opts === 'function') {
+    cb = opts
+    opts = {}
+  }
+  if (!opts) opts = {}
+  cb = once(cb || noop)
+
+  // memoized node lookups by version
+  // OsmVersion -> OsmElement
+  var lookup = memoize(function(version, cb) {
+    self.log.get(version, function (err, node) {
+      if (err) return cb(err)
+      cb(null, nodeToOsmElement(node))
+    })
+  })
+
+  var res = []
+
+  var done = once(function () {
+    if (opts.order === 'type') {
+      res.sort(cmpType)
+    }
+    cb(null, res)
+  })
+
+  self.ready(function () {
+    self.kdb.query(q, opts, onquery)
+  })
+
+  function onquery (err, pts) {
+    if (err) return cb(err)
+    var pending = 1
+    var seen = {}
+    for (var i = 0; i < pts.length; i++) {
+      var pt = pts[i]
+      pending++
+      self._collectNodeAndReferers(kdbPointToVersion(pt), lookup, function (err, r) {
+        if (err) return cb(err)
+        if (r) {
+          for (var i=0; i < r.length; i++) {
+            var elm = r[i]
+            if (!seen[elm.version]) {
+              seen[elm.version] = true
+              res.push(elm)
+            }
+          }
+        }
+        if (--pending <= 0) done()
+      })
+    }
+    if (--pending <= 0) done()
+  }
+}
+var typeOrder = { node: 0, way: 1, relation: 2 }
+function cmpType (a, b) {
+  return typeOrder[a.type] - typeOrder[b.type]
+}
+
 DB.prototype.queryStream = function (q, opts) {
   var self = this
+
+  // memoized node lookups by version
+  // OsmVersion -> OsmElement
+  var lookup = memoize(function(version, cb) {
+    self.log.get(version, function (err, node) {
+      if (err) return cb(err)
+      cb(null, nodeToOsmElement(node))
+    })
+  })
+
   if (!opts) opts = {}
   var stream = opts.order === 'type'
     ? through.obj(writeType, endType)
     : through.obj(write)
-  var seen = {}
   var queue = []
+  var seen = {}
   self.ready(function () {
     var r = self.kdb.queryStream(q, opts)
     r.on('error', stream.emit.bind(stream, 'error'))
@@ -536,11 +703,12 @@ DB.prototype.queryStream = function (q, opts) {
   function write (row, enc, next) {
     next = once(next)
     var tr = this
-    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+    self._collectNodeAndReferers(kdbPointToVersion(row), lookup, function (err, res) {
       if (err) return next()
       if (res) {
         res.forEach(function (r) {
-          tr.push(r)
+          if (!seen[r.version]) tr.push(r)
+          seen[r.version] = true
         })
       }
       next()
@@ -549,12 +717,15 @@ DB.prototype.queryStream = function (q, opts) {
   function writeType (row, enc, next) {
     next = once(next)
     var tr = this
-    self._collectNodeAndReferers(kdbPointToVersion(row), seen, function (err, res) {
+    self._collectNodeAndReferers(kdbPointToVersion(row), lookup, function (err, res) {
       if (err) return next()
       if (res) {
         res.forEach(function (r) {
-          if (r.type === 'node') tr.push(r)
-          else queue.push(r)
+          if (!seen[r.version]) {
+            seen[r.version] = true
+            if (r.type === 'node') tr.push(r)
+            else queue.push(r)
+          }
         })
       }
       next()
@@ -629,4 +800,32 @@ function kdbPointToVersion (pt) {
 // {lat: Number, lon: Number} -> [Number, Number]
 function ptf (x) {
   return [ Number(x.lat), Number(x.lon) ]
+}
+
+// [[x]] -> [x]
+function flatten (listOfLists) {
+  var res = []
+  for (var i=0; i < listOfLists.length; i++) {
+    var list = listOfLists[i]
+    Array.prototype.push.apply(res, list)
+  }
+  return res
+}
+
+// HyperlogNode -> OsmElement
+function nodeToOsmElement (node) {
+  if (node && node.value && node.value.k && node.value.v) {
+    return xtend(node.value.v, {
+      id: node.value.k,
+      version: node.key
+    })
+  } else if (node && node.value && node.value.d) {
+    return {
+      deleted: true,
+      id: node.value.d,
+      version: node.key
+    }
+  } else {
+    throw new Error('invalid hyperlog node')
+  }
 }

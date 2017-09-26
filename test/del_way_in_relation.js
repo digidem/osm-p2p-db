@@ -66,6 +66,7 @@ test('delete a way from a relation', function (t) {
         id: names.G,
         version: versions.G }
     ].sort(idcmp)
+
     osm.query(q0, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage query')
@@ -85,11 +86,11 @@ test('delete a way from a relation', function (t) {
         id: names.G,
         version: versions.G }
     ].sort(idcmp)
+
     osm.query(q1, function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage query')
     })
-
     collect(osm.queryStream(q1), function (err, res) {
       t.ifError(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')

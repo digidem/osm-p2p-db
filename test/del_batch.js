@@ -57,6 +57,7 @@ test('del batch', function (t) {
         id: 'F',
         version: versions.F }
     ].sort(idcmp)
+
     osm.query(q0, function (err, res) {
       t.error(err)
       t.deepEqual(res.sort(idcmp), ex0, 'full coverage query')
@@ -89,6 +90,7 @@ test('del batch', function (t) {
         id: 'F',
         version: versions.F }
     ].sort(idcmp)
+
     osm.query(q1, function (err, res) {
       t.error(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage query')
@@ -97,8 +99,10 @@ test('del batch', function (t) {
       t.error(err)
       t.deepEqual(res.sort(idcmp), ex1, 'partial coverage stream')
     })
+
     var q2 = [[62, 64], [-147, -145]]
     var ex2 = []
+
     osm.query(q2, function (err, res) {
       t.error(err)
       t.deepEqual(res.sort(idcmp), ex2, 'empty coverage query')
