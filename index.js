@@ -404,7 +404,7 @@ function cmpType (a, b) {
 DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   cb = once(cb || noop)
   var self = this
-  if (seenAccum[version]) return cb(null, [])
+  if (seenAccum['deep'+version]) return cb(null, [])
   var res = []
   var added = {}
   var pending = 1
@@ -430,7 +430,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
     // on the map: add it.
     if (links.length === 0 && selfNode && !seenAccum[selfNode.key]) {
       addDocFromNode(selfNode)
-      seenAccum[selfNode.key] = true
+      seenAccum['deep'+selfNode.key] = true
     }
     selfNode = null
 
@@ -484,7 +484,7 @@ DB.prototype._collectNodeAndReferers = function (version, seenAccum, cb) {
   }
 
   function addDoc (id, version, doc) {
-    if (!added[version]) {
+    if (!added[version] && !seenAccum['deep'+version]) {
       doc = xtend(doc, {
         id: id,
         version: version
