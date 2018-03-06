@@ -18,6 +18,7 @@
   - [osm.batch(rows, opts={}, cb)](#osmbatchrows-opts-cb)
   - [osm.get(id, opts={}, cb)](#osmgetid-opts-cb)
   - [osm.query(q, opts, cb)](#osmqueryq-opts-cb)
+  - [osm.getReferrers(id, cb)](#osmgetreferrersid-cb)
   - [osm.ready(cb)](#osmreadycb)
   - [osm.close(cb)](#osmclosecb)
   - [var rstream = osm.queryStream(q, opts)](#var-rstream--osmquerystreamq-opts)
@@ -230,6 +231,21 @@ the properties `{ id: <osm-id>, version: <osm-version>, deleted: true}`.
 Optionally:
 
 * `opts.order` - set to `'type'` to order by type: node, way, relation
+
+### osm.getReferrers(id, cb)
+
+Fetch a list of all OSM ways and relations that refer to the element with ID
+`id`. For a node, this can be ways or relations. For a way or relation, this can
+only be relations.
+
+Objects of the following form are returned:
+
+```js
+{
+  id: '...',
+  version: '...'
+}
+```
 
 ### osm.ready(cb)
 
