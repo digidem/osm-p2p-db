@@ -599,6 +599,19 @@ DB.prototype.close = function (cb) {
   }
 }
 
+DB.prototype.getReferrers = function (id, cb) {
+  this.refs.list(id, function (err, rows) {
+    if (err) cb(err)
+    else cb(null, rows.map(keyf))
+  })
+  function keyf (row) {
+    return {
+      id: row.value,
+      version: row.key
+    }
+  }
+}
+
 function noop () {}
 
 function collectObj (stream, cb) {
