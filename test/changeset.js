@@ -2,7 +2,7 @@ var test = require('tape')
 var makeOsm = require('./create_db')
 
 test('changeset', function (t) {
-  t.plan(15)
+  t.plan(21)
   var osm = makeOsm()
   var docs = {
     A: { type: 'changeset', tags: { comment: 'whatever' } },
@@ -48,9 +48,21 @@ test('changeset', function (t) {
       var expected = [ versions.G ]
       t.deepEqual(keys, expected.sort())
     })
+    osm.getByVersion(versions.A, function (err, doc) {
+      t.ifError(err)
+      t.equal(doc.tags.comment, 'whatever')
+    })
     osm.get(names.A, function (err, doc) {
       t.ifError(err)
       t.equal(doc[Object.keys(doc)[0]].tags.comment, 'whatever')
+    })
+    osm.getByVersion(versions.F, function (err, doc) {
+      t.ifError(err)
+      t.equal(doc.tags.comment, 'blah')
+    })
+    osm.getByVersion('foobar', function (err, doc) {
+      t.ok(err)
+      t.equals(err.notFound, true)
     })
     osm.get(names.F, function (err, doc) {
       t.ifError(err)

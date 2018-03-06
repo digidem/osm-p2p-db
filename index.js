@@ -355,6 +355,27 @@ DB.prototype.get = function (key, opts, cb) {
   })
 }
 
+DB.prototype.getByVersion = function (version, cb) {
+  this.log.get(version, function (err, node) {
+    if (err) return cb(err)
+    var doc
+    if (node.value.d) {
+      doc = {
+        id: node.value.d,
+        version: version,
+        deleted: true
+      }
+    } else {
+      doc = Object.assign({
+        id: node.value.k,
+        version: version
+      }, node.value.v)
+    }
+
+    cb(null, doc)
+  })
+}
+
 DB.prototype.query = function (q, opts, cb) {
   var self = this
   if (typeof opts === 'function') {

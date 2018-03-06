@@ -17,6 +17,7 @@
   - [osm.del(id, opts={}, cb)](#osmdelid-opts-cb)
   - [osm.batch(rows, opts={}, cb)](#osmbatchrows-opts-cb)
   - [osm.get(id, opts={}, cb)](#osmgetid-opts-cb)
+  - [osm.getByVersion(version, opts={}, cb)](#osmgetbyversionversion-opts-cb)
   - [osm.query(q, opts, cb)](#osmqueryq-opts-cb)
   - [osm.getReferrers(id, cb)](#osmgetreferrersid-cb)
   - [osm.ready(cb)](#osmreadycb)
@@ -216,6 +217,11 @@ Get a document as `cb(err, docs)` by its OSM `id`.
 `docs` is an object mapping hyperlog hashes to current document values. If a
 document has been deleted, it will only have the properties `{ id: <osm-id>,
 version: <osm-version>, deleted: true}`.
+
+### osm.getByVersion(version, cb)
+
+Fetch a specific OSM element by its version string. Returns `null` if not found,
+otherwise the single element.
 
 ### osm.query(q, opts, cb)
 
