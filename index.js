@@ -366,10 +366,10 @@ DB.prototype.getByVersion = function (version, cb) {
         deleted: true
       }
     } else {
-      doc = Object.assign({
+      doc = Object.assign(node.value.v, {
         id: node.value.k,
         version: version
-      }, node.value.v)
+      })
     }
 
     cb(null, doc)
